@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "shurjoPay Plugins Hub",
+  "short_name": "shurjoPay",
+  "description": "Developer hub, SDK & plugin directory, interactive sandbox simulator, and API integration guide for shurjoPay payment gateway.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#020617",
+  "background_color": "#020617",
+  "categories": ["finance", "business", "developer tools"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
