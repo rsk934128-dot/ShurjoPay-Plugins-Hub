@@ -151,3 +151,23 @@ export interface BinimoyTransactionRecord {
   timestamp: string;
   clearingRef: string;
 }
+
+export interface ApiRequestLogEntry {
+  id: string;
+  timestamp: string;
+  timeFormatted: string;
+  endpoint: string;
+  fullUrl: string;
+  method: 'POST' | 'GET';
+  operationName: string;
+  status: number;
+  statusText: string;
+  durationMs: number;
+  requestHeaders: Record<string, string>;
+  requestPayload: any;
+  responseHeaders: Record<string, string>;
+  responsePayload: any;
+  curlCommand: string;
+  orderId?: string;
+  spOrderId?: string;
+}

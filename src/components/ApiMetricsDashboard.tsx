@@ -28,8 +28,14 @@ import {
   Download,
   Filter,
   ShieldCheck,
-  Radio
+  Radio,
+  Bell,
+  BellRing,
+  AlertOctagon,
+  X,
+  SlidersHorizontal
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface MetricDataPoint {
   time: string;
@@ -152,12 +158,27 @@ function generateInitialHistory(count = 20): MetricDataPoint[] {
 export const ApiMetricsDashboard: React.FC<{
   onSelectEndpoint?: (path: string) => void;
 }> = ({ onSelectEndpoint }) => {
+  const { isDark } = useTheme();
   const [dataPoints, setDataPoints] = useState<MetricDataPoint[]>(() => generateInitialHistory(20));
   const [isLiveActive, setIsLiveActive] = useState<boolean>(true);
   const [selectedEndpointFilter, setSelectedEndpointFilter] = useState<'all' | 'get_token' | 'secret_pay' | 'verification'>('all');
   const [timeRange, setTimeRange] = useState<'15m' | '1h' | '24h'>('15m');
   const [isPinging, setIsPinging] = useState<boolean>(false);
   const [lastPingResult, setLastPingResult] = useState<{ latency: number; status: number; timestamp: string } | null>(null);
+
+  // Proactive latency threshold alerts
+  const [latencyThreshold, setLatencyThreshold] = useState<number>(200);
+  const [activeAlertToast, setActiveAlertToast] = useState<{
+    id: string;
+    endpoint: string;
+    latency: number;
+    threshold: number;
+    difference: number;
+    time: string;
+    severity: 'warning' | 'critical';
+  } | null>(null);
+  const [breachCount, setBreachCount] = useState<number>(0);
+  const [isSpikeSimulated, setIsSpikeSimulated] = useState<boolean>(false);
 
   // Auto-refresh interval simulation (adds new live data tick every 4 seconds when active)
   useEffect(() => {
@@ -167,11 +188,12 @@ export const ApiMetricsDashboard: React.FC<{
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
-      // Natural jitter for live stream
+      // Natural jitter for live stream or simulated peak spike
+      const multiplier = isSpikeSimulated ? 1.8 : 1.0;
       const noise = (Math.random() - 0.5) * 16;
-      const getToken = Math.round(112 + noise * 0.7);
-      const secretPay = Math.round(158 + noise * 1.3);
-      const verification = Math.round(132 + noise * 0.9);
+      const getToken = Math.round((112 + noise * 0.7) * multiplier);
+      const secretPay = Math.round((158 + noise * 1.3) * multiplier);
+      const verification = Math.round((132 + noise * 0.9) * multiplier);
       const avg = Math.round((getToken + secretPay + verification) / 3);
       const p95 = Math.round(avg * 1.4 + Math.random() * 8);
 
@@ -195,10 +217,39 @@ export const ApiMetricsDashboard: React.FC<{
         const next = [...prev.slice(1), newPoint];
         return next;
       });
+
+      // Check threshold breach on core endpoints
+      const maxVal = Math.max(getToken, secretPay, verification, avg);
+      if (maxVal > latencyThreshold) {
+        const breachedEp =
+          secretPay === maxVal
+            ? 'POST /api/secret-pay'
+            : verification === maxVal
+            ? 'POST /api/verification'
+            : getToken === maxVal
+            ? 'POST /api/get_token'
+            : 'Gateway Average Latency';
+
+        const diff = maxVal - latencyThreshold;
+        setActiveAlertToast({
+          id: `toast-${Date.now()}`,
+          endpoint: breachedEp,
+          latency: maxVal,
+          threshold: latencyThreshold,
+          difference: diff,
+          time: timeStr,
+          severity: maxVal >= latencyThreshold + 40 ? 'critical' : 'warning'
+        });
+        setBreachCount((prev) => prev + 1);
+      }
+
+      if (isSpikeSimulated) {
+        setIsSpikeSimulated(false);
+      }
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [isLiveActive]);
+  }, [isLiveActive, isSpikeSimulated, latencyThreshold]);
 
   // Handle Manual Ping to measure client-to-engine latency
   const handleTriggerPing = async () => {
@@ -280,10 +331,20 @@ export const ApiMetricsDashboard: React.FC<{
               <div>
                 <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
                   <span>shurjoPay API Reliability &amp; Latency Dashboard</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    All Systems Operational
-                  </span>
+                  {breachCount > 0 ? (
+                    <span
+                      id="metrics-badge-latency-alert"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse"
+                    >
+                      <BellRing className="w-3 h-3 text-amber-400" />
+                      <span>{breachCount} Latency Alert{breachCount > 1 ? 's' : ''} (&gt;{latencyThreshold}ms)</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      All Systems Operational (&lt;{latencyThreshold}ms)
+                    </span>
+                  )}
                 </h3>
                 <p className="text-xs text-slate-400">
                   Real-time endpoint performance telemetry, SLA trends, and latency percentiles (Bangladesh Payment Gateway Engine)
@@ -294,6 +355,35 @@ export const ApiMetricsDashboard: React.FC<{
 
           {/* Action Toolbar */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Latency Threshold Selector */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-700/80">
+              <SlidersHorizontal className="w-3 h-3 text-amber-400" />
+              <span className="text-slate-400 text-[11px]">Threshold:</span>
+              <select
+                id="select-metrics-threshold"
+                value={latencyThreshold}
+                onChange={(e) => setLatencyThreshold(Number(e.target.value))}
+                className="bg-transparent text-slate-200 text-xs font-mono focus:outline-none focus:text-amber-300"
+              >
+                <option value={180} className="bg-slate-900">180ms</option>
+                <option value={200} className="bg-slate-900">200ms</option>
+                <option value={220} className="bg-slate-900">220ms</option>
+                <option value={250} className="bg-slate-900">250ms</option>
+              </select>
+            </div>
+
+            {/* Simulate Peak Surge */}
+            <button
+              id="btn-metrics-simulate-spike"
+              onClick={() => setIsSpikeSimulated(true)}
+              disabled={!isLiveActive}
+              className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              title="Trigger high-traffic spike to test alert notification"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>Simulate Spike</span>
+            </button>
+
             {/* Live Telemetry Stream Toggle */}
             <button
               id="btn-toggle-live-stream"
@@ -341,6 +431,58 @@ export const ApiMetricsDashboard: React.FC<{
             </button>
           </div>
         </div>
+
+        {/* Proactive Latency Alert Toast */}
+        {activeAlertToast && (
+          <div
+            id="metrics-toast-alert"
+            role="alert"
+            className={`mt-4 rounded-xl p-3 sm:p-4 border transition-all ${
+              activeAlertToast.severity === 'critical'
+                ? 'bg-rose-950/90 border-rose-500/80 text-rose-100 ring-1 ring-rose-500/40'
+                : 'bg-amber-950/90 border-amber-500/80 text-amber-100 ring-1 ring-amber-500/40'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
+                    activeAlertToast.severity === 'critical'
+                      ? 'bg-rose-900 text-rose-300 animate-bounce'
+                      : 'bg-amber-900 text-amber-300 animate-pulse'
+                  }`}
+                >
+                  {activeAlertToast.severity === 'critical' ? (
+                    <AlertOctagon className="w-4 h-4" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-black/40 border border-white/10">
+                      Performance Alert
+                    </span>
+                    <span className="text-xs font-mono text-slate-300">{activeAlertToast.time}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-rose-500/20 text-rose-200 border border-rose-500/30 font-bold font-mono">
+                      +{activeAlertToast.difference}ms over {activeAlertToast.threshold}ms threshold
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-200 mt-1">
+                    Latency spike detected on <code className="font-mono text-amber-300 bg-black/30 px-1 py-0.2 rounded">{activeAlertToast.endpoint}</code>: recorded <strong className="text-rose-300 font-mono font-bold">{activeAlertToast.latency}ms</strong>.
+                  </p>
+                </div>
+              </div>
+              <button
+                id="btn-metrics-dismiss-toast"
+                onClick={() => setActiveAlertToast(null)}
+                className="p-1 rounded text-slate-400 hover:text-white hover:bg-black/30 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Live Ping Result Banner if probe clicked */}
         {lastPingResult && (
@@ -521,29 +663,30 @@ export const ApiMetricsDashboard: React.FC<{
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} vertical={false} />
                 <XAxis
                   dataKey="time"
-                  stroke="#64748b"
+                  stroke={isDark ? '#64748b' : '#94a3b8'}
                   fontSize={10}
                   tickLine={false}
-                  axisLine={{ stroke: '#334155' }}
+                  axisLine={{ stroke: isDark ? '#334155' : '#cbd5e1' }}
                 />
                 <YAxis
-                  stroke="#64748b"
+                  stroke={isDark ? '#64748b' : '#94a3b8'}
                   fontSize={10}
                   tickLine={false}
-                  axisLine={{ stroke: '#334155' }}
+                  axisLine={{ stroke: isDark ? '#334155' : '#cbd5e1' }}
                   unit="ms"
                   domain={[50, 'dataMax + 40']}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#334155',
+                    backgroundColor: isDark ? '#090d16' : '#ffffff',
+                    borderColor: isDark ? '#334155' : '#e2e8f0',
                     borderRadius: '0.5rem',
                     fontSize: '0.75rem',
-                    color: '#f8fafc'
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                    boxShadow: isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : '0 4px 6px -1px rgba(0, 0, 0, 0.08)'
                   }}
                   itemStyle={{ padding: '1px 0' }}
                   formatter={(value: any, name: any) => [
@@ -661,29 +804,30 @@ export const ApiMetricsDashboard: React.FC<{
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} vertical={false} />
                 <XAxis
                   dataKey="time"
-                  stroke="#64748b"
+                  stroke={isDark ? '#64748b' : '#94a3b8'}
                   fontSize={10}
                   tickLine={false}
-                  axisLine={{ stroke: '#334155' }}
+                  axisLine={{ stroke: isDark ? '#334155' : '#cbd5e1' }}
                 />
                 <YAxis
-                  stroke="#64748b"
+                  stroke={isDark ? '#64748b' : '#94a3b8'}
                   fontSize={10}
                   tickLine={false}
-                  axisLine={{ stroke: '#334155' }}
+                  axisLine={{ stroke: isDark ? '#334155' : '#cbd5e1' }}
                   domain={[98.5, 100]}
                   unit="%"
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#334155',
+                    backgroundColor: isDark ? '#090d16' : '#ffffff',
+                    borderColor: isDark ? '#334155' : '#e2e8f0',
                     borderRadius: '0.5rem',
                     fontSize: '0.75rem',
-                    color: '#f8fafc'
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                    boxShadow: isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.5)' : '0 4px 6px -1px rgba(0, 0, 0, 0.08)'
                   }}
                   itemStyle={{ padding: '1px 0' }}
                   formatter={(value: any) => [`${value}%`, 'Success Rate']}

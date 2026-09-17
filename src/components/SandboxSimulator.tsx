@@ -1,11 +1,213 @@
 import React, { useState, useEffect } from 'react';
-import { Play, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Key, ShieldCheck, FileText, Send, Sparkles, UserCheck, HardDrive, Mail } from 'lucide-react';
+import { Play, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Key, ShieldCheck, FileText, Send, Sparkles, UserCheck, HardDrive, Mail, QrCode, Smartphone } from 'lucide-react';
 import { SANDBOX_CREDENTIALS } from '../data';
-import { PaymentRequestData, VerificationResponse } from '../types';
+import { PaymentRequestData, VerificationResponse, ApiRequestLogEntry } from '../types';
 import { getCurrentSessionUser } from '../services/firebaseAuth';
 import { saveUserTransaction, getUserSettings } from '../services/userData';
 import { sendPaymentNotificationEmail } from '../services/gmailNotificationAgent';
 import { uploadBackupToGoogleDrive } from '../services/googleDriveBackupAgent';
+import { ApiRequestLogConsole } from './ApiRequestLogConsole';
+import { PaymentQrGenerator } from './PaymentQrGenerator';
+
+// Helper to format ISO timestamp into HH:MM:SS.mmm
+function formatLogTime(d: Date): string {
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}.${d.getMilliseconds().toString().padStart(3, '0')}`;
+}
+
+// Initial realistic simulated transaction logs for first-time developers
+function createDefaultSimulatorLogs(): ApiRequestLogEntry[] {
+  const now = Date.now();
+  const t1 = new Date(now - 120000);
+  const t2 = new Date(now - 75000);
+  const t3 = new Date(now - 30000);
+
+  return [
+    {
+      id: `log_${t3.getTime()}_ver`,
+      timestamp: t3.toISOString(),
+      timeFormatted: formatLogTime(t3),
+      endpoint: '/api/verification',
+      fullUrl: 'https://sandbox.shurjopayment.com/api/verification',
+      method: 'POST',
+      operationName: 'Payment Verification (IPN/Callback)',
+      status: 200,
+      statusText: 'OK',
+      durationMs: 138,
+      orderId: 'sp_984123',
+      spOrderId: 'sp6214d7056e83a',
+      requestHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.sp_mock_token_sandbox_900s',
+        'User-Agent': 'shurjoPay-SDK/2.1.0-sandbox',
+        'Host': 'sandbox.shurjopayment.com'
+      },
+      requestPayload: {
+        order_id: 'sp6214d7056e83a'
+      },
+      responseHeaders: {
+        'HTTP/1.1': '200 OK',
+        'Server': 'nginx/1.24.0',
+        'Date': t3.toUTCString(),
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Connection': 'keep-alive',
+        'X-Powered-By': 'PHP/8.1.28',
+        'X-Transaction-Trace-ID': 'sp_trc_998241fa',
+        'X-RateLimit-Limit': '120',
+        'X-RateLimit-Remaining': '117',
+        'Access-Control-Allow-Origin': '*'
+      },
+      responsePayload: [
+        {
+          id: 1109642,
+          order_id: 'sp6214d7056e83a',
+          currency: 'BDT',
+          amount: '1000.0000',
+          payable_amount: '1000.0000',
+          discount_amount: '0.0000',
+          disc_percent: 0,
+          recived_amount: '1000.0000',
+          usd_amt: '0.0000',
+          usd_rate: 0,
+          card_holder_name: 'Maharab Kibria',
+          card_number: '4532XXXXXXXX1234',
+          phone_no: '01766615677',
+          bank_trx_id: 'TXN_B38X99A',
+          invoice_no: 'sp6214d7056e83a',
+          bank_status: 'Success',
+          customer_order_id: 'sp_984123',
+          sp_code: '1000',
+          sp_massage: 'Success',
+          sp_message: 'Success',
+          name: 'Maharab Kibria',
+          email: 'customer@example.com',
+          address: 'Mohakhali, Dhaka',
+          city: 'Dhaka',
+          value1: 'Order ref #4928',
+          transaction_status: 'Successful',
+          method: 'Open Banking (NPSB / Binimoy)',
+          date_time: t3.toISOString().replace('T', ' ').slice(0, 19)
+        }
+      ],
+      curlCommand: `curl -X POST "https://sandbox.shurjopayment.com/api/verification" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.sp_mock_token_sandbox_900s" \\
+  -d '{"order_id": "sp6214d7056e83a"}'`
+    },
+    {
+      id: `log_${t2.getTime()}_pay`,
+      timestamp: t2.toISOString(),
+      timeFormatted: formatLogTime(t2),
+      endpoint: '/api/secret-pay',
+      fullUrl: 'https://sandbox.shurjopayment.com/api/secret-pay',
+      method: 'POST',
+      operationName: 'Secret Pay (Checkout Session)',
+      status: 200,
+      statusText: 'OK',
+      durationMs: 182,
+      orderId: 'sp_984123',
+      spOrderId: 'sp6214d7056e83a',
+      requestHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.sp_mock_token_sandbox_900s',
+        'X-Client-IP': '103.101.1.2',
+        'User-Agent': 'shurjoPay-PHP-SDK/2.1.0',
+        'Host': 'sandbox.shurjopayment.com'
+      },
+      requestPayload: {
+        prefix: 'sp',
+        currency: 'BDT',
+        amount: 1000,
+        order_id: 'sp_984123',
+        client_ip: '103.101.1.2',
+        customer_name: 'Maharab Kibria',
+        customer_phone: '01766615677',
+        customer_email: 'customer@example.com',
+        customer_address: 'Mohakhali, Dhaka',
+        customer_city: 'Dhaka',
+        return_url: 'https://sandbox.shurjopayment.com/response',
+        cancel_url: 'https://sandbox.shurjopayment.com/response',
+        value1: 'Order ref #4928'
+      },
+      responseHeaders: {
+        'HTTP/1.1': '200 OK',
+        'Server': 'nginx/1.24.0',
+        'Date': t2.toUTCString(),
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Connection': 'keep-alive',
+        'X-Powered-By': 'PHP/8.1.28',
+        'X-Transaction-Trace-ID': 'sp_trc_881944bc',
+        'X-RateLimit-Limit': '120',
+        'X-RateLimit-Remaining': '118',
+        'Access-Control-Allow-Origin': '*'
+      },
+      responsePayload: {
+        checkout_url: 'https://sandbox.securepay.shurjopayment.com/spaycheckout/?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.sp_mock_token_sandbox_900s',
+        amount: 1000,
+        currency: 'BDT',
+        sp_order_id: 'sp6214d7056e83a',
+        customer_order_id: 'sp_984123',
+        intent: 'sale',
+        transactionStatus: 'Initiated'
+      },
+      curlCommand: `curl -X POST "https://sandbox.shurjopayment.com/api/secret-pay" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.sp_mock_token_sandbox_900s" \\
+  -H "X-Client-IP: 103.101.1.2" \\
+  -d '{"prefix":"sp","currency":"BDT","amount":1000,"order_id":"sp_984123","client_ip":"103.101.1.2","customer_name":"Maharab Kibria","customer_phone":"01766615677","customer_email":"customer@example.com","customer_address":"Mohakhali, Dhaka","customer_city":"Dhaka","return_url":"https://sandbox.shurjopayment.com/response","cancel_url":"https://sandbox.shurjopayment.com/response","value1":"Order ref #4928"}'`
+    },
+    {
+      id: `log_${t1.getTime()}_tok`,
+      timestamp: t1.toISOString(),
+      timeFormatted: formatLogTime(t1),
+      endpoint: '/api/get_token',
+      fullUrl: 'https://sandbox.shurjopayment.com/api/get_token',
+      method: 'POST',
+      operationName: 'Token Generation',
+      status: 200,
+      statusText: 'OK',
+      durationMs: 122,
+      requestHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'shurjoPay-ReactSimulator/2.1',
+        'Host': 'sandbox.shurjopayment.com'
+      },
+      requestPayload: {
+        username: 'sp_sandbox',
+        password: '••••••••'
+      },
+      responseHeaders: {
+        'HTTP/1.1': '200 OK',
+        'Server': 'nginx/1.24.0',
+        'Date': t1.toUTCString(),
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Connection': 'keep-alive',
+        'X-Powered-By': 'PHP/8.1.28',
+        'X-Transaction-Trace-ID': 'sp_trc_770198aa',
+        'X-RateLimit-Limit': '120',
+        'X-RateLimit-Remaining': '119',
+        'Access-Control-Allow-Origin': '*'
+      },
+      responsePayload: {
+        token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.sp_mock_token_sandbox_900s',
+        execute_url: 'https://sandbox.shurjopayment.com/api/secret-pay',
+        token_type: 'Bearer',
+        sp_code: '1000',
+        message: 'Merchant authenticated successfully',
+        token_create_time: t1.toISOString(),
+        expires_in: 900
+      },
+      curlCommand: `curl -X POST "https://sandbox.shurjopayment.com/api/get_token" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{"username": "sp_sandbox", "password": "password"}'`
+    }
+  ];
+}
 
 export const SandboxSimulator: React.FC = () => {
   const [step, setStep] = useState<'token' | 'checkout' | 'payment_gateway' | 'verification' | 'completed'>('token');
@@ -16,21 +218,20 @@ export const SandboxSimulator: React.FC = () => {
   useEffect(() => {
     const user = getCurrentSessionUser();
     setCurrentUser(user);
-    if (user) {
-      const userConfig = getUserSettings(user.uid);
-      if (userConfig.sandboxUsername) {
-        setCredentials({
-          username: userConfig.sandboxUsername,
-          password: userConfig.sandboxPassword || SANDBOX_CREDENTIALS.password
-        });
-      }
-      if (userConfig.sandboxPrefix) {
-        setPaymentForm((prev) => ({
-          ...prev,
-          prefix: userConfig.sandboxPrefix,
-          client_ip: userConfig.clientIp || prev.client_ip
-        }));
-      }
+    const effectiveUid = user ? user.uid : 'guest';
+    const userConfig = getUserSettings(effectiveUid);
+    if (userConfig.sandboxUsername) {
+      setCredentials({
+        username: userConfig.activeMode === 'live' && userConfig.liveUsername ? userConfig.liveUsername : userConfig.sandboxUsername,
+        password: userConfig.activeMode === 'live' && userConfig.livePassword ? userConfig.livePassword : (userConfig.sandboxPassword || SANDBOX_CREDENTIALS.password)
+      });
+    }
+    if (userConfig.sandboxPrefix) {
+      setPaymentForm((prev) => ({
+        ...prev,
+        prefix: userConfig.activeMode === 'live' && userConfig.livePrefix ? userConfig.livePrefix : userConfig.sandboxPrefix,
+        client_ip: userConfig.clientIp || prev.client_ip
+      }));
     }
   }, []);
   
@@ -61,13 +262,42 @@ export const SandboxSimulator: React.FC = () => {
   const [gatewayStatus, setGatewayStatus] = useState<'Success' | 'Failed' | 'Cancel'>('Success');
   const [verificationResult, setVerificationResult] = useState<VerificationResponse | null>(null);
   const [selectedPaymentChannel, setSelectedPaymentChannel] = useState<string>('Open Banking (NPSB / Binimoy)');
+  const [showStep2QrPreview, setShowStep2QrPreview] = useState<boolean>(false);
+  const [showStep3Qr, setShowStep3Qr] = useState<boolean>(true);
 
   // Email Notification & Drive Backup agent state
   const [emailReceiptSent, setEmailReceiptSent] = useState(false);
   const [isDispatchingAgent, setIsDispatchingAgent] = useState(false);
   const [driveBackupDone, setDriveBackupDone] = useState(false);
 
+  // API Request Log state for debugging
+  const [apiLogs, setApiLogs] = useState<ApiRequestLogEntry[]>(() => {
+    try {
+      const cached = localStorage.getItem('shurjopay_sandbox_api_logs');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return createDefaultSimulatorLogs();
+  });
+
+  // Sync logs to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('shurjopay_sandbox_api_logs', JSON.stringify(apiLogs.slice(0, 50)));
+    } catch (e) {}
+  }, [apiLogs]);
+
+  const handleClearLogs = () => {
+    setApiLogs([]);
+    try {
+      localStorage.removeItem('shurjopay_sandbox_api_logs');
+    } catch (e) {}
+  };
+
   const handleGenerateToken = () => {
+    const startTime = performance.now();
     setLoading(true);
     setTimeout(() => {
       const generated = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
@@ -75,18 +305,129 @@ export const SandboxSimulator: React.FC = () => {
       setTokenExpiresIn(900);
       setLoading(false);
       setStep('checkout');
+
+      const elapsed = Math.round(performance.now() - startTime);
+      const now = new Date();
+      const newLog: ApiRequestLogEntry = {
+        id: `log_${now.getTime()}_tok`,
+        timestamp: now.toISOString(),
+        timeFormatted: formatLogTime(now),
+        endpoint: '/api/get_token',
+        fullUrl: 'https://sandbox.shurjopayment.com/api/get_token',
+        method: 'POST',
+        operationName: 'Token Generation',
+        status: 200,
+        statusText: 'OK',
+        durationMs: elapsed,
+        requestHeaders: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'shurjoPay-ReactSimulator/2.1',
+          'Host': 'sandbox.shurjopayment.com'
+        },
+        requestPayload: {
+          username: credentials.username,
+          password: '••••••••'
+        },
+        responseHeaders: {
+          'HTTP/1.1': '200 OK',
+          'Server': 'nginx/1.24.0',
+          'Date': now.toUTCString(),
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Connection': 'keep-alive',
+          'X-Powered-By': 'PHP/8.1.28',
+          'X-Transaction-Trace-ID': `sp_trc_${Math.random().toString(36).substring(2, 10)}`,
+          'X-RateLimit-Limit': '120',
+          'X-RateLimit-Remaining': '119',
+          'Access-Control-Allow-Origin': '*'
+        },
+        responsePayload: {
+          token: generated,
+          execute_url: 'https://sandbox.shurjopayment.com/api/secret-pay',
+          token_type: 'Bearer',
+          sp_code: '1000',
+          message: 'Merchant authenticated successfully',
+          token_create_time: now.toISOString(),
+          expires_in: 900
+        },
+        curlCommand: `curl -X POST "https://sandbox.shurjopayment.com/api/get_token" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -d '{"username": "${credentials.username}", "password": "${credentials.password}"}'`
+      };
+
+      setApiLogs((prev) => [newLog, ...prev]);
     }, 600);
   };
 
   const handleCreateCheckout = (e: React.FormEvent) => {
     e.preventDefault();
+    const startTime = performance.now();
     setLoading(true);
     setTimeout(() => {
       const generatedSpId = `sp${Math.random().toString(36).substring(2, 12)}`;
       setSpOrderId(generatedSpId);
-      setCheckoutUrl(`https://sandbox.securepay.shurjopayment.com/spaycheckout/?token=${token}`);
+      const targetCheckoutUrl = `https://sandbox.securepay.shurjopayment.com/spaycheckout/?token=${token}`;
+      setCheckoutUrl(targetCheckoutUrl);
       setLoading(false);
       setStep('payment_gateway');
+
+      const elapsed = Math.round(performance.now() - startTime);
+      const now = new Date();
+      const newLog: ApiRequestLogEntry = {
+        id: `log_${now.getTime()}_pay`,
+        timestamp: now.toISOString(),
+        timeFormatted: formatLogTime(now),
+        endpoint: '/api/secret-pay',
+        fullUrl: 'https://sandbox.shurjopayment.com/api/secret-pay',
+        method: 'POST',
+        operationName: 'Secret Pay (Checkout Session)',
+        status: 200,
+        statusText: 'OK',
+        durationMs: elapsed,
+        orderId: paymentForm.order_id,
+        spOrderId: generatedSpId,
+        requestHeaders: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Client-IP': paymentForm.client_ip,
+          'User-Agent': 'shurjoPay-PHP-SDK/2.1.0',
+          'Host': 'sandbox.shurjopayment.com'
+        },
+        requestPayload: {
+          ...paymentForm
+        },
+        responseHeaders: {
+          'HTTP/1.1': '200 OK',
+          'Server': 'nginx/1.24.0',
+          'Date': now.toUTCString(),
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Connection': 'keep-alive',
+          'X-Powered-By': 'PHP/8.1.28',
+          'X-Transaction-Trace-ID': `sp_trc_${Math.random().toString(36).substring(2, 10)}`,
+          'X-RateLimit-Limit': '120',
+          'X-RateLimit-Remaining': '118',
+          'Access-Control-Allow-Origin': '*'
+        },
+        responsePayload: {
+          checkout_url: targetCheckoutUrl,
+          amount: paymentForm.amount,
+          currency: paymentForm.currency,
+          sp_order_id: generatedSpId,
+          customer_order_id: paymentForm.order_id,
+          intent: 'sale',
+          transactionStatus: 'Initiated'
+        },
+        curlCommand: `curl -X POST "https://sandbox.shurjopayment.com/api/secret-pay" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -H "Authorization: Bearer ${token}" \\
+  -H "X-Client-IP: ${paymentForm.client_ip}" \\
+  -d '${JSON.stringify(paymentForm)}'`
+      };
+
+      setApiLogs((prev) => [newLog, ...prev]);
     }, 700);
   };
 
@@ -100,6 +441,7 @@ export const SandboxSimulator: React.FC = () => {
   };
 
   const handleVerifyPayment = () => {
+    const startTime = performance.now();
     setLoading(true);
     setTimeout(() => {
       const isSuccess = gatewayStatus === 'Success';
@@ -141,6 +483,53 @@ export const SandboxSimulator: React.FC = () => {
       setStep('completed');
       setEmailReceiptSent(false);
       setDriveBackupDone(false);
+
+      const elapsed = Math.round(performance.now() - startTime);
+      const now = new Date();
+      const newLog: ApiRequestLogEntry = {
+        id: `log_${now.getTime()}_ver`,
+        timestamp: now.toISOString(),
+        timeFormatted: formatLogTime(now),
+        endpoint: '/api/verification',
+        fullUrl: 'https://sandbox.shurjopayment.com/api/verification',
+        method: 'POST',
+        operationName: 'Payment Verification (IPN/Callback)',
+        status: 200,
+        statusText: 'OK',
+        durationMs: elapsed,
+        orderId: paymentForm.order_id,
+        spOrderId: spOrderId,
+        requestHeaders: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': 'shurjoPay-SDK/2.1.0-sandbox',
+          'Host': 'sandbox.shurjopayment.com'
+        },
+        requestPayload: {
+          order_id: spOrderId
+        },
+        responseHeaders: {
+          'HTTP/1.1': '200 OK',
+          'Server': 'nginx/1.24.0',
+          'Date': now.toUTCString(),
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Connection': 'keep-alive',
+          'X-Powered-By': 'PHP/8.1.28',
+          'X-Transaction-Trace-ID': `sp_trc_${Math.random().toString(36).substring(2, 10)}`,
+          'X-RateLimit-Limit': '120',
+          'X-RateLimit-Remaining': '117',
+          'Access-Control-Allow-Origin': '*'
+        },
+        responsePayload: [mockVerification],
+        curlCommand: `curl -X POST "https://sandbox.shurjopayment.com/api/verification" \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json" \\
+  -H "Authorization: Bearer ${token}" \\
+  -d '{"order_id": "${spOrderId}"}'`
+      };
+
+      setApiLogs((prev) => [newLog, ...prev]);
 
       // Auto-trigger Drive Backup Agent in background for the newly created transaction
       uploadBackupToGoogleDrive(
@@ -429,20 +818,36 @@ export const SandboxSimulator: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setStep('token')}
-              className="text-xs text-slate-400 hover:text-slate-200"
-            >
-              ← Back to Token Step
-            </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-800">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setStep('token')}
+                className="text-xs text-slate-400 hover:text-slate-200"
+              >
+                ← Back to Token Step
+              </button>
+
+              <button
+                id="btn-toggle-step2-qr"
+                type="button"
+                onClick={() => setShowStep2QrPreview(!showStep2QrPreview)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+                  showStep2QrPreview
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                {showStep2QrPreview ? 'Hide Payment QR Code' : 'Payment QR Code Generator'}
+              </button>
+            </div>
 
             <button
               id="submit-secret-pay-btn"
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-lg text-sm flex items-center gap-2 transition-all disabled:opacity-50"
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-lg text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -455,29 +860,57 @@ export const SandboxSimulator: React.FC = () => {
               )}
             </button>
           </div>
+
+          {/* Optional inline Payment QR Code preview in Step 2 */}
+          {showStep2QrPreview && (
+            <div className="pt-3 border-t border-slate-800/80">
+              <PaymentQrGenerator
+                paymentData={paymentForm}
+                token={token}
+                checkoutUrl={checkoutUrl}
+                spOrderId={spOrderId}
+              />
+            </div>
+          )}
         </form>
       )}
 
       {/* STEP 3: SIMULATED SHURJOPAY HOSTED PAYMENT GATEWAY */}
       {step === 'payment_gateway' && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
             <div>
               <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
                 Simulated Hosted Gateway Interface
               </span>
-              <h3 className="text-lg font-semibold text-slate-100 mt-1.5">
-                ShurjoPay Secure Checkout Page
+              <h3 className="text-lg font-semibold text-slate-100 mt-1.5 flex items-center gap-2">
+                <span>ShurjoPay Secure Checkout Page</span>
+                <span className="text-xs font-normal text-slate-400 font-mono">/spaycheckout</span>
               </h3>
             </div>
-            <div className="text-right">
-              <span className="text-xs text-slate-400 block">shurjoPay Order ID:</span>
-              <code className="text-xs font-mono text-amber-300 font-semibold">{spOrderId}</code>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                id="btn-toggle-step3-qr"
+                onClick={() => setShowStep3Qr(!showStep3Qr)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+                  showStep3Qr
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                {showStep3Qr ? 'Hide QR Code' : 'Show Payment QR Code'}
+              </button>
+              <div className="text-right">
+                <span className="text-xs text-slate-400 block">shurjoPay Order ID:</span>
+                <code className="text-xs font-mono text-amber-300 font-semibold">{spOrderId}</code>
+              </div>
             </div>
           </div>
 
           {/* Checkout simulated frame */}
-          <div className="bg-slate-950 rounded-xl p-6 border border-slate-800 max-w-xl mx-auto space-y-5">
+          <div className="bg-slate-950 rounded-xl p-6 border border-slate-800 max-w-2xl mx-auto space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
               <div>
                 <h4 className="text-sm font-semibold text-slate-200">Merchant Store: Point of Sale</h4>
@@ -493,8 +926,9 @@ export const SandboxSimulator: React.FC = () => {
               In production, the customer is redirected to <code className="text-amber-300 font-mono text-[11px]">{checkoutUrl}</code> to choose payment methods:
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
               <div 
+                id="channel-bkash-btn"
                 onClick={() => setSelectedPaymentChannel('bKash Direct')}
                 className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${
                   selectedPaymentChannel === 'bKash Direct'
@@ -507,6 +941,7 @@ export const SandboxSimulator: React.FC = () => {
               </div>
 
               <div 
+                id="channel-nagad-btn"
                 onClick={() => setSelectedPaymentChannel('Nagad / Rocket')}
                 className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${
                   selectedPaymentChannel === 'Nagad / Rocket'
@@ -519,6 +954,7 @@ export const SandboxSimulator: React.FC = () => {
               </div>
 
               <div 
+                id="channel-cards-btn"
                 onClick={() => setSelectedPaymentChannel('Visa / Mastercard')}
                 className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${
                   selectedPaymentChannel === 'Visa / Mastercard'
@@ -531,6 +967,7 @@ export const SandboxSimulator: React.FC = () => {
               </div>
 
               <div 
+                id="channel-openbanking-btn"
                 onClick={() => setSelectedPaymentChannel('Open Banking (NPSB / Binimoy)')}
                 className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${
                   selectedPaymentChannel === 'Open Banking (NPSB / Binimoy)'
@@ -540,6 +977,24 @@ export const SandboxSimulator: React.FC = () => {
               >
                 <span className="block text-xs font-bold text-amber-400">Open Banking</span>
                 <span className="text-[10px] text-slate-400">NPSB &amp; Binimoy</span>
+              </div>
+
+              <div 
+                id="channel-bangla-qr-btn"
+                onClick={() => {
+                  setSelectedPaymentChannel('Bangla QR / App Scan');
+                  setShowStep3Qr(true);
+                }}
+                className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${
+                  selectedPaymentChannel === 'Bangla QR / App Scan'
+                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/30'
+                    : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <span className="block text-xs font-bold text-emerald-400 flex items-center justify-center gap-1">
+                  <QrCode className="w-3.5 h-3.5" /> Bangla QR
+                </span>
+                <span className="text-[10px] text-slate-400">App Scan &amp; Pay</span>
               </div>
             </div>
 
@@ -575,6 +1030,19 @@ export const SandboxSimulator: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Integrated Payment QR Code Generator for Mobile Testing */}
+          {showStep3Qr && (
+            <div className="pt-2">
+              <PaymentQrGenerator
+                paymentData={paymentForm}
+                token={token}
+                checkoutUrl={checkoutUrl}
+                spOrderId={spOrderId}
+                onSimulateMobilePayment={handleProcessPayment}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -765,6 +1233,9 @@ export const SandboxSimulator: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Developer API Request Log & Debug Console */}
+      <ApiRequestLogConsole logs={apiLogs} onClearLogs={handleClearLogs} />
     </div>
   );
 };

@@ -353,6 +353,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs"
                     />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-slate-400 mb-1">Sandbox Base URL</label>
+                    <input
+                      type="text"
+                      value={settings.sandboxBaseUrl || 'https://sandbox.shurjopay.com'}
+                      onChange={(e) => setSettings({ ...settings, sandboxBaseUrl: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -379,6 +388,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       placeholder="••••••••"
                       value={settings.livePassword || ''}
                       onChange={(e) => setSettings({ ...settings, livePassword: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-slate-400 mb-1">Live Base URL</label>
+                    <input
+                      type="text"
+                      value={settings.liveBaseUrl || 'https://engine.shurjopay.com'}
+                      onChange={(e) => setSettings({ ...settings, liveBaseUrl: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs"
                     />
                   </div>

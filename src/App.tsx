@@ -9,6 +9,9 @@ import { GoogleWorkspaceAgentHub } from './components/GoogleWorkspaceAgentHub';
 import { GmailReceiptModal } from './components/GmailReceiptModal';
 import { AuthModal } from './components/AuthModal';
 import { UserProfileModal } from './components/UserProfileModal';
+import { MobileSidebarDrawer } from './components/MobileSidebarDrawer';
+import { MerchantCredentialsConnectHub } from './components/MerchantCredentialsConnectHub';
+import { ThemeToggle } from './components/ThemeToggle';
 import { getCurrentSessionUser, UserProfile } from './services/firebaseAuth';
 import { PluginItem } from './types';
 import { 
@@ -34,13 +37,16 @@ import {
   X,
   FileCheck,
   Building2,
-  HardDrive
+  HardDrive,
+  Menu,
+  Key
 } from 'lucide-react';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace'>('plugins');
+  const [activeView, setActiveView] = useState<'plugins' | 'credentials' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace'>('plugins');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [selectedPluginForSnippet, setSelectedPluginForSnippet] = useState<PluginItem | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Authentication & Saved User Data State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => getCurrentSessionUser());
@@ -118,8 +124,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Navigation tabs */}
-          <nav className="flex items-center gap-1.5">
+          {/* Desktop Navigation tabs (hidden on mobile/tablet) */}
+          <nav className="hidden lg:flex items-center gap-1.5">
             <button
               id="nav-btn-plugins"
               onClick={() => setActiveView('plugins')}
@@ -131,6 +137,19 @@ export default function App() {
             >
               <Layers className="w-3.5 h-3.5" />
               Plugins &amp; SDKs ({PLUGINS_DATA.length})
+            </button>
+
+            <button
+              id="nav-btn-credentials"
+              onClick={() => setActiveView('credentials')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+                activeView === 'credentials'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>মার্চেন্ট ক্রেডেনশিয়াল &amp; কানেক্ট</span>
             </button>
 
             <button
@@ -222,12 +241,15 @@ export default function App() {
             <button
               id="header-receipt-btn"
               onClick={() => setIsReceiptModalOpen(true)}
-              className="hidden lg:flex px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700/80 items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700/80 items-center gap-1.5 transition-colors"
               title="Compose payment confirmation receipt"
             >
               <Mail className="w-3.5 h-3.5 text-amber-400" />
               Send Receipt
             </button>
+
+            {/* Global Theme Toggle (Desktop) */}
+            <ThemeToggle id="header-desktop-theme-toggle" />
 
             {/* Firebase Auth Account Button */}
             {currentUser ? (
@@ -257,16 +279,65 @@ export default function App() {
                 title="Firebase Auth ইউজার রেজিস্ট্রেশন / লগইন"
               >
                 <span className="text-xs">🔥</span>
-                <span className="hidden sm:inline">লগইন / রেজিস্টার</span>
-                <span className="sm:hidden">লগইন</span>
+                <span>লগইন / রেজিস্টার</span>
               </button>
             )}
           </nav>
+
+          {/* Mobile Right Controls: Theme, Install, Profile & Sidebar */}
+          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
+            {/* Global Theme Toggle (Mobile) */}
+            <ThemeToggle id="header-mobile-theme-toggle" variant="mobile-header" />
+
+            {/* Quick Install Icon */}
+            <button
+              id="header-mobile-install-btn"
+              onClick={handleTriggerInstall}
+              className="p-2 text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl transition-colors shrink-0"
+              title="স্মার্টফোনে অ্যাপ ইনস্টল করুন"
+            >
+              <Smartphone className="w-4 h-4" />
+            </button>
+
+            {/* Quick User Button */}
+            {currentUser ? (
+              <button
+                id="header-mobile-user-btn"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center font-bold text-xs shadow-sm shrink-0"
+                title="প্রোফাইল সেটিংস"
+              >
+                {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'M'}
+              </button>
+            ) : (
+              <button
+                id="header-mobile-login-btn"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-sm flex items-center gap-1 shrink-0 transition-all"
+                title="মার্চেন্ট লগইন"
+              >
+                <span>🔥</span>
+                <span>লগইন</span>
+              </button>
+            )}
+
+            {/* Primary Mobile Sidebar Toggle Button */}
+            <button
+              id="mobile-sidebar-toggle-btn"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/50 text-amber-300 hover:text-amber-200 flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              aria-label="মোবাইল সাইডবার বাটন - সকল প্রোগ্রাম দেখুন"
+              title="সকল প্রোগ্রাম ও সার্ভিস মেনু"
+            >
+              <Menu className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-slate-100">সকল প্রোগ্রাম</span>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8 space-y-8">
         {/* Intro banner with logged in personalization */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-800/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-sm">
           <div className="relative z-10 max-w-3xl space-y-2">
@@ -317,6 +388,13 @@ export default function App() {
           <PluginsCatalog
             plugins={PLUGINS_DATA}
             onSelectSnippet={(plugin) => setSelectedPluginForSnippet(plugin)}
+          />
+        )}
+
+        {activeView === 'credentials' && (
+          <MerchantCredentialsConnectHub
+            onNavigateToSimulator={() => setActiveView('sandbox')}
+            onNavigateToDocs={() => setActiveView('docs')}
           />
         )}
 
@@ -488,6 +566,83 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Mobile Sticky Bottom Navigation Bar for rapid switching */}
+      <nav
+        id="mobile-bottom-navigation-bar"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-3 py-2 flex items-center justify-around shadow-2xl"
+      >
+        <button
+          id="mobile-bottom-tab-plugins"
+          onClick={() => {
+            setActiveView('plugins');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
+            activeView === 'plugins' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>প্লাগিন</span>
+        </button>
+
+        <button
+          id="mobile-bottom-tab-sandbox"
+          onClick={() => {
+            setActiveView('sandbox');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
+            activeView === 'sandbox' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Play className="w-4 h-4" />
+          <span>স্যান্ডবক্স</span>
+        </button>
+
+        <button
+          id="mobile-bottom-tab-docs"
+          onClick={() => {
+            setActiveView('docs');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
+            activeView === 'docs' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>এপিআই</span>
+        </button>
+
+        <button
+          id="mobile-bottom-tab-sidebar"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-amber-400 active:scale-95 transition-transform"
+          aria-label="সকল প্রোগ্রাম ও সাইডবার মেনু দেখুন"
+        >
+          <div className="p-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 shadow-xs">
+            <Menu className="w-4 h-4" />
+          </div>
+          <span className="text-amber-300">সব প্রোগ্রাম</span>
+        </button>
+      </nav>
+
+      {/* Mobile Full Sidebar Drawer */}
+      <MobileSidebarDrawer
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+        activeView={activeView}
+        onSelectView={(view) => {
+          setActiveView(view);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
+        onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
+        onTriggerInstall={handleTriggerInstall}
+        pluginsCount={PLUGINS_DATA.length}
+      />
 
       {/* Gmail receipt modal */}
       <GmailReceiptModal

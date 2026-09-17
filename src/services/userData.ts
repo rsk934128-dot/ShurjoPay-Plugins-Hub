@@ -14,31 +14,40 @@ export interface SavedTransaction {
 }
 
 export interface UserMerchantSettings {
+  activeMode: 'sandbox' | 'live';
   sandboxUsername: string;
   sandboxPassword?: string;
   sandboxPrefix: string;
   sandboxStoreId: string | number;
+  sandboxBaseUrl: string;
   liveUsername?: string;
   livePassword?: string;
   livePrefix?: string;
   liveStoreId?: string | number;
+  liveBaseUrl: string;
   clientIp?: string;
   defaultCurrency: 'BDT' | 'USD';
   webhookUrl?: string;
+  lastPingStatus?: 'success' | 'failed' | null;
+  lastPingTime?: string;
 }
 
 const DEFAULT_SETTINGS: UserMerchantSettings = {
+  activeMode: 'sandbox',
   sandboxUsername: 'sp_sandbox',
   sandboxPassword: 'pyyk97hu&6u6',
   sandboxPrefix: 'sp',
   sandboxStoreId: 1,
+  sandboxBaseUrl: 'https://sandbox.shurjopayment.com',
   liveUsername: '',
   livePassword: '',
   livePrefix: 'sp',
   liveStoreId: 1,
+  liveBaseUrl: 'https://engine.shurjopay.com',
   clientIp: '103.101.1.2',
   defaultCurrency: 'BDT',
-  webhookUrl: 'https://yoursite.com/api/shurjopay/callback'
+  webhookUrl: 'https://yoursite.com/api/shurjopay/callback',
+  lastPingStatus: null
 };
 
 function getStorageKey(uid: string, type: string) {

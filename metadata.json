@@ -1,6 +1,6 @@
 {
   "name": "ShurjoPay Plugins Hub",
-  "description": "Developer hub, SDK & plugin directory, interactive sandbox simulator, real-time API response latency & reliability trends dashboard (Recharts), Open Banking, Gmail Notification Agent & Google Drive Backup, and merchant KYC verification for shurjoPay.",
+  "description": "Developer hub, SDK & plugin directory, Merchant Credentials & External App Connect Hub (.env, Node.js, Laravel, Python, Flutter), interactive sandbox simulator, scannable Payment QR Code generator, Open Banking, Gmail Notification Agent & Google Drive Backup, and merchant KYC verification for shurjoPay.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
