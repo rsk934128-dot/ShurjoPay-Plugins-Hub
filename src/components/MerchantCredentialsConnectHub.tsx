@@ -133,7 +133,7 @@ export const MerchantCredentialsConnectHub: React.FC<MerchantCredentialsConnectH
     setTimeout(() => setSaveSuccess(false), 2500);
   };
 
-  const handleFillOfficialSandboxDefaults = () => {
+  const handleFillSandboxDefaults = () => {
     setUsername(SANDBOX_CREDENTIALS.username);
     setPassword(SANDBOX_CREDENTIALS.password);
     setBaseUrl('https://sandbox.shurjopay.com');
@@ -622,11 +622,11 @@ curl -X POST "${baseUrl}/api/verification" \\
             <button
               id="btn-fill-sandbox-defaults"
               type="button"
-              onClick={handleFillOfficialSandboxDefaults}
+              onClick={handleFillSandboxDefaults}
               className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1.5 underline underline-offset-4"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              অফিশিয়াল টেস্ট ক্রেডেনশিয়াল অটো-ফিল করুন
+              পাবলিক স্যান্ডবক্স টেস্ট ক্রেডেনশিয়াল অটো-ফিল করুন
             </button>
           )}
         </div>
@@ -957,7 +957,7 @@ curl -X POST "${baseUrl}/api/verification" \\
                   </span>
                 </div>
                 <p className="text-slate-400 text-[11px] leading-relaxed">
-                  অ্যাকাউন্ট অ্যাপ্রুভ হওয়ার পর সুর্যপে রেজিস্ট্রার্ড অফিসিয়াল ইমেলে ওয়েলকাম ক্রেডেনশিয়াল হিসেবে প্রেরণ করে।
+                  অ্যাকাউন্ট অ্যাপ্রুভ হওয়ার পর shurjoPay টিম থেকে রেজিস্ট্রার্ড মার্চেন্ট ইমেলে ওয়েলকাম ক্রেডেনশিয়াল হিসেবে প্রেরণ করে।
                 </p>
               </div>
 

@@ -20,6 +20,7 @@ import {
   loginWithDemoMerchant, 
   UserProfile 
 } from '../services/firebaseAuth';
+import { ConceptBrandLogo } from './ConceptBrandLogo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -136,9 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/95">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-amber-500/40 p-0.5 shrink-0 flex items-center justify-center shadow-md shadow-amber-500/10">
-              <img src="/logo.png" alt="shurjoPay" className="w-full h-full object-cover rounded-lg" />
-            </div>
+            <ConceptBrandLogo size="md" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-slate-100">

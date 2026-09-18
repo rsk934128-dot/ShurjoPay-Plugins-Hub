@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Key, ShieldCheck, FileText, Send, Sparkles, UserCheck, HardDrive, Mail, QrCode, Smartphone } from 'lucide-react';
+import { Play, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Key, ShieldCheck, FileText, Send, Sparkles, UserCheck, HardDrive, Mail, QrCode, Smartphone, ZoomIn } from 'lucide-react';
 import { SANDBOX_CREDENTIALS } from '../data';
 import { PaymentRequestData, VerificationResponse, ApiRequestLogEntry } from '../types';
 import { getCurrentSessionUser } from '../services/firebaseAuth';
@@ -8,6 +8,7 @@ import { sendPaymentNotificationEmail } from '../services/gmailNotificationAgent
 import { uploadBackupToGoogleDrive } from '../services/googleDriveBackupAgent';
 import { ApiRequestLogConsole } from './ApiRequestLogConsole';
 import { PaymentQrGenerator } from './PaymentQrGenerator';
+import { ImageLightboxModal } from './ImageLightboxModal';
 
 // Helper to format ISO timestamp into HH:MM:SS.mmm
 function formatLogTime(d: Date): string {
@@ -264,6 +265,7 @@ export const SandboxSimulator: React.FC = () => {
   const [selectedPaymentChannel, setSelectedPaymentChannel] = useState<string>('Open Banking (NPSB / Binimoy)');
   const [showStep2QrPreview, setShowStep2QrPreview] = useState<boolean>(false);
   const [showStep3Qr, setShowStep3Qr] = useState<boolean>(true);
+  const [isCheckoutPreviewModalOpen, setIsCheckoutPreviewModalOpen] = useState<boolean>(false);
 
   // Email Notification & Drive Backup agent state
   const [emailReceiptSent, setEmailReceiptSent] = useState(false);
@@ -608,6 +610,61 @@ export const SandboxSimulator: React.FC = () => {
         </div>
       </div>
 
+      {/* Visual Checkout Page Spotlight Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-850 border border-slate-800 rounded-2xl p-5 shadow-lg overflow-hidden relative">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="flex-1 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Live Gateway Experience
+              </span>
+              <span className="text-xs text-slate-400 font-mono">Customer Perspective UI</span>
+            </div>
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              সূর্যপে লাইভ হোস্টেড চেকআউট পেজ ভিজ্যুয়াল
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              আপনার ই-কমার্স স্টোর বা অ্যাপ থেকে কাস্টমার যখন পেমেন্ট করতে যান, তখন তিনি এই অফিসিয়াল ইন্টারফেসটি দেখতে পান। এখানে বিকাশ, নগদ, রকেট, ভিসা, মাস্টারকার্ড, ইন্টারনেট ব্যাংকিং এবং বাংলা কিউআর এর সমন্বিত চ্যানেল উপস্থিত থাকে।
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setIsCheckoutPreviewModalOpen(true)}
+                className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+                <span>চেকআউট স্ক্রিন পূর্ণাকারে দেখুন (Full HD)</span>
+              </button>
+              <span className="text-[11px] text-slate-400">
+                • ১০০% মোবাইল রেসপন্সিভ ও ২-ফ্যাক্টর সিকিউরড
+              </span>
+            </div>
+          </div>
+
+          {/* Picture Thumbnail Preview */}
+          <div
+            onClick={() => setIsCheckoutPreviewModalOpen(true)}
+            className="w-full lg:w-72 h-40 sm:h-44 rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950 relative group cursor-pointer shrink-0 shadow-md transition-all hover:border-amber-500/60"
+            title="পূর্ণ রেজুলিউশনে দেখতে ক্লিক করুন"
+          >
+            <img
+              src="/images/simulator_checkout_preview_1789577220066.jpg"
+              alt="shurjoPay Checkout Preview"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-95 group-hover:opacity-100"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent flex items-end justify-between p-2.5">
+              <span className="text-[10px] font-semibold text-slate-200 bg-slate-900/90 px-2 py-0.5 rounded border border-slate-700/60 flex items-center gap-1">
+                <ZoomIn className="w-3 h-3 text-amber-400" /> ক্লিক করে দেখুন
+              </span>
+              <span className="text-[10px] font-mono text-amber-400 bg-slate-950/80 px-1.5 py-0.5 rounded">
+                Checkout UI
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* STEP 1: TOKEN GENERATION */}
       {step === 'token' && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
@@ -888,7 +945,18 @@ export const SandboxSimulator: React.FC = () => {
                 <span className="text-xs font-normal text-slate-400 font-mono">/spaycheckout</span>
               </h3>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                id="btn-show-step3-preview"
+                onClick={() => setIsCheckoutPreviewModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-slate-950 border-slate-800 hover:border-amber-500/40 text-amber-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="আসল সূর্যপে চেকআউট স্ক্রিন দেখুন"
+              >
+                <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                আসল চেকআউট প্রিভিউ
+              </button>
+
               <button
                 type="button"
                 id="btn-toggle-step3-qr"
@@ -902,7 +970,7 @@ export const SandboxSimulator: React.FC = () => {
                 <QrCode className="w-3.5 h-3.5 text-amber-400" />
                 {showStep3Qr ? 'Hide QR Code' : 'Show Payment QR Code'}
               </button>
-              <div className="text-right">
+              <div className="text-right ml-auto">
                 <span className="text-xs text-slate-400 block">shurjoPay Order ID:</span>
                 <code className="text-xs font-mono text-amber-300 font-semibold">{spOrderId}</code>
               </div>
@@ -1236,6 +1304,16 @@ export const SandboxSimulator: React.FC = () => {
 
       {/* Developer API Request Log & Debug Console */}
       <ApiRequestLogConsole logs={apiLogs} onClearLogs={handleClearLogs} />
+
+      {/* Checkout Screen Lightbox Preview Modal */}
+      <ImageLightboxModal
+        isOpen={isCheckoutPreviewModalOpen}
+        onClose={() => setIsCheckoutPreviewModalOpen(false)}
+        imageSrc="/images/simulator_checkout_preview_1789577220066.jpg"
+        title="shurjoPay Hosted Checkout Interface"
+        description="সূর্যপে হোস্ট করা অফিশিয়াল চেকআউট পেজ: বিকাশ, নগদ, রকেট, ডেবিট/ক্রেডিট কার্ড এবং ইন্টারনেট ব্যাংকিংয়ের আসল প্রিভিউ।"
+        badge="Checkout Screen Preview"
+      />
     </div>
   );
 };

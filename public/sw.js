@@ -1,14 +1,10 @@
-// shurjoPay Service Worker for PWA installability & offline caching
-const CACHE_NAME = 'shurjopay-hub-v1';
+// SPay DevHub Service Worker for PWA installability & offline caching
+const CACHE_NAME = 'spay-devhub-concept-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/apple-touch-icon.png',
-  '/favicon.png'
+  '/concept-logo.svg'
 ];
 
 self.addEventListener('install', (event) => {

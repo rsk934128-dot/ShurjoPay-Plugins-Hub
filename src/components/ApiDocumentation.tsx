@@ -815,7 +815,7 @@ export const ApiDocumentation: React.FC = () => {
             target="_blank"
             rel="noreferrer"
             className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white rounded-lg text-xs font-medium flex items-center gap-1.5 border border-slate-700/80 shadow-sm transition-all"
-            title="Open official Postman collection pre-populated with current configuration credentials"
+            title="Open shurjoPay Postman collection pre-populated with current configuration credentials"
           >
             <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Pre-populated Docs</span>
@@ -1021,7 +1021,7 @@ export const ApiDocumentation: React.FC = () => {
                     target="_blank"
                     rel="noreferrer"
                     className="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-md text-[11px] font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
-                    title="Open official Postman collection pre-populated with current Merchant ID & credentials"
+                    title="Open shurjoPay Postman collection pre-populated with current Merchant ID & credentials"
                   >
                     <span>Open Postman Docs</span>
                     <ExternalLink className="w-3 h-3" />
@@ -1246,7 +1246,7 @@ export const ApiDocumentation: React.FC = () => {
               shurjoPay V2 Android SDK Integration (v2.0)
             </h3>
             <p className="text-xs text-slate-400">
-              The official V2 Android SDK allows native Android apps to launch checkout dialogues and receive asynchronous payment callbacks.
+              The shurjoMukhi V2 Android SDK allows native Android apps to launch checkout dialogues and receive asynchronous payment callbacks.
             </p>
 
             <div className="space-y-3 pt-2">
@@ -1413,7 +1413,7 @@ ShurjoPaySDK.instance?.makePayment(
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 rounded-full bg-slate-800 text-amber-400 flex items-center justify-center shrink-0 font-bold">2</span>
-                <span><strong>Receive Credentials:</strong> Obtain Merchant ID, Password, and RSA Public Key via official secure email.</span>
+                <span><strong>Receive Credentials:</strong> Obtain Merchant ID, Password, and RSA Public Key via secure onboarding email.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 rounded-full bg-slate-800 text-amber-400 flex items-center justify-center shrink-0 font-bold">3</span>
@@ -1430,7 +1430,7 @@ ShurjoPaySDK.instance?.makePayment(
             <h3 className="text-sm font-semibold text-slate-100 flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
-                Technical Support &amp; Office Contact
+                shurjoPay Gateway Support &amp; Office (Reference)
               </span>
               <button
                 type="button"
@@ -1442,8 +1442,11 @@ ShurjoPaySDK.instance?.makePayment(
               </button>
             </h3>
             <div className="text-xs text-slate-400 space-y-2 leading-relaxed">
-              <p className="text-slate-200 font-medium">shurjoMukhi Limited / shurjoPay</p>
-              <p>Haque Tower (10th Floor), JA-28/8/D, Mohakhali C/A, Dhaka-1212, Bangladesh</p>
+              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-normal">
+                <strong>Important Note:</strong> This Developer Hub is an independent developer concept &amp; proposal prototype created to demonstrate modern developer tooling for shurjoPay merchants. For actual production merchant account opening or commercial inquiries, contact shurjoMukhi Ltd. directly below.
+              </div>
+              <p className="text-slate-200 font-medium">Gateway Operator: shurjoMukhi Limited (shurjoPay)</p>
+              <p>Head Office: Haque Tower (10th Floor), JA-28/8/D, Mohakhali C/A, Dhaka-1212, Bangladesh</p>
               <p>
                 Website &amp; Support: <a href="https://shurjopay.com.bd/#contacts" target="_blank" rel="noreferrer" className="text-amber-400 hover:underline">shurjopay.com.bd</a>
               </p>

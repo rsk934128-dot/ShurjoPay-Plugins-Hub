@@ -12,6 +12,8 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { MobileSidebarDrawer } from './components/MobileSidebarDrawer';
 import { MerchantCredentialsConnectHub } from './components/MerchantCredentialsConnectHub';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ImageLightboxModal } from './components/ImageLightboxModal';
+import { ConceptBrandLogo } from './components/ConceptBrandLogo';
 import { getCurrentSessionUser, UserProfile } from './services/firebaseAuth';
 import { PluginItem } from './types';
 import { 
@@ -39,11 +41,12 @@ import {
   Building2,
   HardDrive,
   Menu,
-  Key
+  Key,
+  ZoomIn
 } from 'lucide-react';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<'plugins' | 'credentials' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace'>('plugins');
+  const [activeView, setActiveView] = useState<'sandbox' | 'credentials' | 'workspace' | 'openbanking' | 'docs' | 'kyc' | 'plugins'>('sandbox');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [selectedPluginForSnippet, setSelectedPluginForSnippet] = useState<PluginItem | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -57,6 +60,14 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+
+  // Picture Preview Lightbox Modal State
+  const [activeLightboxImage, setActiveLightboxImage] = useState<{
+    src: string;
+    title: string;
+    desc?: string;
+    badge?: string;
+  } | null>(null);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: any) => {
@@ -102,41 +113,37 @@ export default function App() {
       <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* shurjoPay Official App Logo */}
-            <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-900 border border-amber-500/40 p-0.5 shadow-lg shadow-amber-500/20 shrink-0 flex items-center justify-center transition-transform hover:scale-105">
-              <img 
-                src="/logo.png" 
-                alt="shurjoPay Logo" 
-                className="w-full h-full object-cover rounded-[10px]"
-                loading="eager"
-              />
-            </div>
+            {/* Independent Developer Concept Logo */}
+            <ConceptBrandLogo size="lg" showBadge />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-                  <span>shurjoPay</span>
+                  <span>SPay DevHub</span>
                 </h1>
-                <span className="text-[10px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  Plugins Hub V2.0
+                <span className="text-[10px] font-semibold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                  Independent Concept / Demo
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Official Merchant SDKs, Modules &amp; RESTful API Gateway</p>
+              <p className="text-xs text-slate-400">Proposed Developer Portal &amp; Tooling for shurjoPay Gateway</p>
             </div>
           </div>
 
           {/* Desktop Navigation tabs (hidden on mobile/tablet) */}
           <nav className="hidden lg:flex items-center gap-1.5">
             <button
-              id="nav-btn-plugins"
-              onClick={() => setActiveView('plugins')}
+              id="nav-btn-sandbox"
+              onClick={() => setActiveView('sandbox')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeView === 'plugins'
+                activeView === 'sandbox'
                   ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              Plugins &amp; SDKs ({PLUGINS_DATA.length})
+              <Play className="w-3.5 h-3.5" />
+              <span>স্যান্ডবক্স সিমুলেটর</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-extrabold bg-slate-950/20 text-slate-950">
+                Live
+              </span>
             </button>
 
             <button
@@ -149,47 +156,23 @@ export default function App() {
               }`}
             >
               <Key className="w-3.5 h-3.5" />
-              <span>মার্চেন্ট ক্রেডেনশিয়াল &amp; কানেক্ট</span>
+              <span>মার্চেন্ট কানেক্ট হাব</span>
             </button>
 
             <button
-              id="nav-btn-sandbox"
-              onClick={() => setActiveView('sandbox')}
+              id="nav-btn-workspace"
+              onClick={() => setActiveView('workspace')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeView === 'sandbox'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                activeView === 'workspace'
+                  ? 'bg-gradient-to-r from-sky-500 to-blue-500 text-white shadow-md font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Play className="w-3.5 h-3.5" />
-              Sandbox Simulator
-            </button>
-
-            <button
-              id="nav-btn-docs"
-              onClick={() => setActiveView('docs')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeView === 'docs'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              API Guide &amp; Codes
-            </button>
-
-            <button
-              id="nav-btn-kyc"
-              onClick={() => setActiveView('kyc')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeView === 'kyc'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <FileCheck className="w-3.5 h-3.5" />
-              <span>KYC ও আইনি নথি</span>
-              <span className="hidden xl:inline text-[10px] opacity-80">(TIN, NID...)</span>
+              <HardDrive className={`w-3.5 h-3.5 ${activeView === 'workspace' ? 'text-white' : 'text-sky-400'}`} />
+              <span>জিমেইল &amp; ড্রাইভ ব্যাকআপ</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-extrabold bg-sky-950/40 text-sky-200">
+                Agent
+              </span>
             </button>
 
             <button
@@ -211,19 +194,42 @@ export default function App() {
             </button>
 
             <button
-              id="nav-btn-workspace"
-              onClick={() => setActiveView('workspace')}
+              id="nav-btn-docs"
+              onClick={() => setActiveView('docs')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-                activeView === 'workspace'
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-500 text-white shadow-md font-bold'
+                activeView === 'docs'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <HardDrive className={`w-3.5 h-3.5 ${activeView === 'workspace' ? 'text-white' : 'text-sky-400'}`} />
-              <span>জিমেইল &amp; ড্রাইভ ব্যাকআপ</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-extrabold bg-sky-950/40 text-sky-200">
-                Agent
-              </span>
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>এপিআই গাইড &amp; কোডস</span>
+            </button>
+
+            <button
+              id="nav-btn-kyc"
+              onClick={() => setActiveView('kyc')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+                activeView === 'kyc'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <FileCheck className="w-3.5 h-3.5" />
+              <span>KYC অনবোর্ডিং</span>
+            </button>
+
+            <button
+              id="nav-btn-plugins"
+              onClick={() => setActiveView('plugins')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+                activeView === 'plugins'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>প্ল্যাটফর্ম সাপোর্ট</span>
             </button>
 
             {/* Mobile / PWA App Install Button */}
@@ -338,47 +344,94 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8 space-y-8">
-        {/* Intro banner with logged in personalization */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-800/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-sm">
-          <div className="relative z-10 max-w-3xl space-y-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-white tracking-tight">
-                {currentUser 
-                  ? `স্বাগতম, ${currentUser.displayName}! (${currentUser.merchantName || 'মার্চেন্ট হাব'})`
-                  : 'Welcome to ShurjoPay Developer Hub'
-                }
-              </h2>
-              {currentUser && (
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">
-                  Firebase Session Active
+        {/* Intro banner with logged in personalization and Developer Hub Visual Feature */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-850 border border-slate-800 rounded-2xl p-5 sm:p-6 relative overflow-hidden shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
+            {/* Left Column: Context & Actions */}
+            <div className="lg:col-span-8 space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  {currentUser 
+                    ? `স্বাগতম, ${currentUser.displayName}! (${currentUser.merchantName || 'প্রপোজাল ডেমো'})`
+                    : 'SPay DevHub — Developer Experience Concept'
+                  }
+                </h2>
+                {currentUser && (
+                  <span className="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-medium">
+                    Firebase Session Active
+                  </span>
+                )}
+                <span className="text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                  Independent Concept Demo
                 </span>
-              )}
+                <span className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">
+                  v2.0 Proposal Prototype
+                </span>
+              </div>
+
+              <p className="text-sm text-slate-300 leading-relaxed">
+                এটি একজন স্বতন্ত্র ডেভেলপার (Independent Developer) দ্বারা তৈরিকৃত আধুনিক ডেভেলপার হাব ও ইন্টারেক্টিভ স্যান্ডবক্স কনসেপ্ট ডেমো — যা shurjoPay-এর মার্চেন্ট ও ইঞ্জিনিয়ারিং টিমের জন্য একটি প্রস্তাবিত সহযোগিতা হিসেবে প্রস্তুত করা হয়েছে। (Not an official shurjoMukhi Ltd. entity, but a proposed community showcase).
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2.5 pt-2 text-xs">
+                <span className="flex items-center gap-1.5 text-slate-300 font-mono bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
+                  <Code2 className="w-3.5 h-3.5 text-amber-400" /> Independent Developer Concept
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-300 font-mono bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span> Target: shurjoPay API v2
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-300 font-mono bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
+                  <CreditCard className="w-3.5 h-3.5 text-amber-400" /> bKash, Nagad, Cards &amp; NPSB
+                </span>
+                {currentUser ? (
+                  <button
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="flex items-center gap-1 text-amber-400 hover:text-amber-300 ml-auto font-medium"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> সংরক্ষিত তথ্য দেখুন
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="flex items-center gap-1 text-amber-400 hover:text-amber-300 ml-auto font-medium"
+                  >
+                    🔥 Firebase লগইন করুন <ArrowRight className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              shurjoPay provides complete plugins, modules, and native SDKs across PHP, Laravel, WooCommerce, OpenCart, Android, Flutter, iOS Swift, Node.js, Python, Spring, .NET, and Rust. {currentUser ? 'আপনার টেস্ট ট্রানজ্যাকশন এবং গেটওয়ে ক্রেডেনশিয়াল অ্যাকাউন্টে সংরক্ষিত হচ্ছে।' : 'মার্চেন্ট হিসেবে লগইন করে আপনার টেস্ট ট্রানজ্যাকশন ও ক্রেডেনশিয়াল সেভ রাখুন।'}
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs">
-              <span className="flex items-center gap-1 text-slate-300 font-mono bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> PSO Licensed in Bangladesh
-              </span>
-              <span className="flex items-center gap-1 text-slate-300 font-mono bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
-                <CreditCard className="w-3.5 h-3.5 text-amber-400" /> bKash, Nagad, Cards, MFS &amp; Internet Banking
-              </span>
-              {currentUser ? (
-                <button
-                  onClick={() => setIsProfileModalOpen(true)}
-                  className="flex items-center gap-1 text-amber-400 hover:text-amber-300 ml-auto font-medium"
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> সংরক্ষিত তথ্য দেখুন
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="flex items-center gap-1 text-amber-400 hover:text-amber-300 ml-auto font-medium"
-                >
-                  🔥 Firebase লগইন করুন <ArrowRight className="w-3 h-3" />
-                </button>
-              )}
+
+            {/* Right Column: Developer Hub Visual Picture Card */}
+            <div className="lg:col-span-4">
+              <div
+                onClick={() => setActiveLightboxImage({
+                  src: '/images/developer_hub_banner_1789577203623.jpg',
+                  title: 'SPay DevHub — Developer Experience Concept',
+                  desc: 'মার্চেন্ট SDKs, ইন্টিগ্রেশন মডিউল, রেস্টফুল গেটওয়ে এবং আর্কিটেকচার ব্লুপ্রিন্ট প্রিভিউ।',
+                  badge: 'Concept Prototype V2.0'
+                })}
+                className="group relative rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950 cursor-pointer shadow-md hover:border-amber-500/60 hover:shadow-amber-500/10 transition-all"
+                title="পূর্ণ রেজুলিউশনে দেখতে ক্লিক করুন"
+              >
+                <div className="aspect-[16/9] w-full overflow-hidden bg-slate-900">
+                  <img
+                    src="/images/developer_hub_banner_1789577203623.jpg"
+                    alt="shurjoPay Developer Hub Visual"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent flex flex-col justify-end p-3 pointer-events-none">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-amber-300 bg-slate-900/90 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-1">
+                      <ZoomIn className="w-3 h-3" /> বড় করে দেখুন (HD)
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-300 bg-slate-950/80 px-1.5 py-0.5 rounded">
+                      Gateway Hub
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -388,6 +441,7 @@ export default function App() {
           <PluginsCatalog
             plugins={PLUGINS_DATA}
             onSelectSnippet={(plugin) => setSelectedPluginForSnippet(plugin)}
+            onNavigateToView={(view) => setActiveView(view)}
           />
         )}
 
@@ -462,13 +516,18 @@ export default function App() {
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-6 text-xs text-slate-500 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md overflow-hidden bg-slate-900 border border-amber-500/30 p-0.5 shrink-0">
-              <img src="/logo.png" alt="shurjoPay" className="w-full h-full object-cover rounded-xs" />
+          <div className="flex items-center gap-3">
+            <ConceptBrandLogo size="sm" />
+            <div>
+              <p className="text-slate-300 font-medium">
+                Proposed Developer Hub Concept for shurjoPay <span className="text-amber-400 font-normal">(Unofficial Demo / Proposal)</span>
+              </p>
+              <p className="text-[11px] text-slate-400 leading-normal">
+                স্বতন্ত্র ডেভেলপার দ্বারা তৈরিকৃত ইন্টারঅ্যাক্টিভ কনসেপ্ট প্রজেক্ট। All official trademarks, logos, and licenses belong to shurjoMukhi Limited.
+              </p>
             </div>
-            <p>© {new Date().getFullYear()} shurjoPay. Haque Tower (10th Floor), Mohakhali C/A, Dhaka-1212, Bangladesh.</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
             <button
               onClick={() => setIsInstallModalOpen(true)}
               className="text-amber-400/90 hover:text-amber-300 flex items-center gap-1 font-medium transition-colors"
@@ -476,11 +535,11 @@ export default function App() {
               <Smartphone className="w-3.5 h-3.5" />
               <span>মোবাইলে ইনস্টল</span>
             </button>
-            <a href="https://documenter.getpostman.com/view/6335853/U16dS8ig" target="_blank" rel="noreferrer" className="hover:text-slate-300">
-              Postman Docs
+            <a href="https://documenter.getpostman.com/view/6335853/U16dS8ig" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-slate-200">
+              shurjoPay Postman Docs (Reference)
             </a>
-            <a href="https://shurjopay.com.bd/#contactsshurjoPay" target="_blank" rel="noreferrer" className="hover:text-slate-300">
-              Contact Us
+            <a href="https://shurjopay.com.bd/#contacts" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-slate-200">
+              shurjoPay Portal (shurjopay.com.bd)
             </a>
           </div>
         </div>
@@ -499,21 +558,10 @@ export default function App() {
 
             {/* Logo and App Title */}
             <div className="flex flex-col items-center text-center space-y-3 pt-2">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-950 border-2 border-amber-500/40 p-1 shadow-xl shadow-amber-500/25 flex items-center justify-center">
-                  <img
-                    src="/logo.png"
-                    alt="shurjoPay Logo"
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[10px] text-white font-bold">
-                  ✓
-                </div>
-              </div>
+              <ConceptBrandLogo size="xl" showBadge />
 
               <div>
-                <h3 className="text-lg font-bold text-white">shurjoPay Plugins Hub</h3>
+                <h3 className="text-lg font-bold text-white">SPay DevHub (Concept Demo)</h3>
                 <p className="text-xs text-amber-400 font-medium">মোবাইল অ্যাপ হিসেবে যুক্ত করুন</p>
                 <p className="text-xs text-slate-400 mt-1">
                   অ্যাপটি আপনার ফোনের হোম স্ক্রিনে ইনস্টল করে সরাসরি অ্যাপ আইকন থেকে চালু করতে পারেন।
@@ -671,6 +719,18 @@ export default function App() {
           onProfileUpdated={(updated) => {
             setCurrentUser(updated);
           }}
+        />
+      )}
+
+      {/* Picture Lightbox Preview Modal */}
+      {activeLightboxImage && (
+        <ImageLightboxModal
+          isOpen={!!activeLightboxImage}
+          onClose={() => setActiveLightboxImage(null)}
+          imageSrc={activeLightboxImage.src}
+          title={activeLightboxImage.title}
+          description={activeLightboxImage.desc}
+          badge={activeLightboxImage.badge}
         />
       )}
     </div>

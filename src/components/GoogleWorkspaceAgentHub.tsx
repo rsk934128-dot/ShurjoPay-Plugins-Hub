@@ -401,7 +401,7 @@ export const GoogleWorkspaceAgentHub: React.FC<GoogleWorkspaceAgentHubProps> = (
                   <Mail className="w-5 h-5 text-amber-400" />
                   <h3 className="text-sm font-semibold text-slate-100">ইনস্ট্যান্ট টেস্ট ইমেইল পাঠান (Instant Test)</h3>
                 </div>
-                <span className="text-[10px] text-amber-400 font-mono">Template: Official Receipt</span>
+                <span className="text-[10px] text-amber-400 font-mono">Template: Standard Receipt</span>
               </div>
 
               <div className="space-y-3">
@@ -592,7 +592,7 @@ export const GoogleWorkspaceAgentHub: React.FC<GoogleWorkspaceAgentHubProps> = (
               <span className="text-xs font-semibold text-slate-300 block mb-2">স্ট্যান্ডার্ড ডিজিটাল রসিদ প্রিভিউ (Email Template):</span>
               <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 max-w-xl mx-auto shadow-inner space-y-3 font-sans">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-3 rounded-lg text-center text-slate-950 font-bold text-sm">
-                  shurjoPay Official Payment Confirmation
+                  shurjoPay Gateway Payment Confirmation
                 </div>
                 <div className="border-b border-slate-800 pb-3 text-center">
                   <span className="text-2xl font-bold text-slate-100">BDT 1,500.00</span>

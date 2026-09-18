@@ -1,6 +1,6 @@
 {
-  "name": "ShurjoPay Plugins Hub",
-  "description": "Developer hub, SDK & plugin directory, Merchant Credentials & External App Connect Hub (.env, Node.js, Laravel, Python, Flutter), interactive sandbox simulator, scannable Payment QR Code generator, Open Banking, Gmail Notification Agent & Google Drive Backup, and merchant KYC verification for shurjoPay.",
+  "name": "SPay DevHub — Developer Experience Concept",
+  "description": "An independent developer proposal & interactive concept prototype for shurjoPay Developer Hub, featuring SDK catalogs, sandbox simulator, and merchant tools.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -7,11 +7,13 @@ export interface PluginItem {
   repoUrl: string;
   packageUrl?: string;
   version?: string;
+  badgeType?: 'verified-repo' | 'packagist' | 'community-concept';
   popular?: boolean;
   installCommand?: string;
   language: string;
   iconName: string;
   description: string;
+  sourceNote?: string;
 }
 
 export interface ApiResponseCode {

@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "shurjoPay Plugins Hub",
-  "short_name": "shurjoPay",
-  "description": "Developer hub, SDK & plugin directory, interactive sandbox simulator, and API integration guide for shurjoPay payment gateway.",
+  "name": "SPay DevHub — Developer Experience Concept",
+  "short_name": "SPay DevHub",
+  "description": "Proposed developer hub concept prototype for shurjoPay integration.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -12,21 +12,15 @@
   "categories": ["finance", "business", "developer tools"],
   "icons": [
     {
-      "src": "/pwa-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/concept-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/concept-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     }
   ]

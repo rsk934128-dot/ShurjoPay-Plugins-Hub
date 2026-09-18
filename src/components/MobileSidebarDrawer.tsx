@@ -16,10 +16,12 @@ import {
   ChevronRight,
   Zap,
   Activity,
-  Key
+  Key,
+  Code2
 } from 'lucide-react';
 import { UserProfile } from '../services/firebaseAuth';
 import { ThemeToggle } from './ThemeToggle';
+import { ConceptBrandLogo } from './ConceptBrandLogo';
 
 interface MobileSidebarDrawerProps {
   isOpen: boolean;
@@ -74,28 +76,36 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
 
   const programs = [
     {
+      id: 'sandbox' as const,
+      title: 'স্যান্ডবক্স সিমুলেটর',
+      subtitle: 'bKash, Nagad, Rocket ও কার্ড পেমেন্ট টেস্ট ও কলব্যাক',
+      badge: 'লাইভ ডেমো',
+      badgeColor: 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60',
+      icon: Play
+    },
+    {
       id: 'credentials' as const,
-      title: 'মার্চেন্ট ক্রেডেনশিয়াল & কানেক্ট',
-      subtitle: 'API কী, .env জেনারেটর ও অন্যান্য অ্যাপের সংযোগ হাব',
+      title: 'মার্চেন্ট কানেক্ট হাব',
+      subtitle: 'API কী, .env জেনারেটর, ক্লায়েন্ট আইপি ও ওয়েবহুক চেকার',
       badge: 'API Connect',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       icon: Key
     },
     {
-      id: 'plugins' as const,
-      title: 'প্লাগিন ও এসডিকে হাব',
-      subtitle: 'WordPress, Laravel, PHP, Flutter, Node.js...',
-      badge: `${pluginsCount} SDKs`,
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-      icon: Layers
+      id: 'workspace' as const,
+      title: 'জিমেইল & ড্রাইভ ব্যাকআপ',
+      subtitle: 'ডিজিটাল ক্যাশ মেমো ইমেইল ও ক্লাউড ব্যাকআপ সিঙ্ক',
+      badge: 'Google Agent',
+      badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-800/60',
+      icon: HardDrive
     },
     {
-      id: 'sandbox' as const,
-      title: 'স্যান্ডবক্স সিমুলেটর',
-      subtitle: 'bKash, Nagad, Rocket ও কার্ড পেমেন্ট টেস্ট',
-      badge: 'লাইভ টেস্ট',
-      badgeColor: 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60',
-      icon: Play
+      id: 'openbanking' as const,
+      title: 'ওপেন ব্যাংকিং ও বিনিময়',
+      subtitle: 'বাংলাদেশ ব্যাংক বিনিময় IDTP, NPSB ও A2A ট্রান্সফার',
+      badge: 'A2A / IDTP',
+      badgeColor: 'bg-amber-950/80 text-amber-400 border-amber-800/60',
+      icon: Building2
     },
     {
       id: 'docs' as const,
@@ -114,20 +124,12 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
       icon: FileCheck
     },
     {
-      id: 'openbanking' as const,
-      title: 'ওপেন ব্যাংকিং ও বিনিময়',
-      subtitle: 'বাংলাদেশ ব্যাংক বিনিময় IDTP, NPSB ও A2A ট্রান্সফার',
-      badge: 'A2A / IDTP',
-      badgeColor: 'bg-amber-950/80 text-amber-400 border-amber-800/60',
-      icon: Building2
-    },
-    {
-      id: 'workspace' as const,
-      title: 'জিমেইল & ড্রাইভ ব্যাকআপ',
-      subtitle: 'ডিজিটাল ক্যাশ মেমো ইমেইল ও ক্লাউড ব্যাকআপ সিঙ্ক',
-      badge: 'Google Agent',
-      badgeColor: 'bg-blue-950/80 text-blue-300 border-blue-800/60',
-      icon: HardDrive
+      id: 'plugins' as const,
+      title: 'প্ল্যাটফর্ম সাপোর্ট ওভারভিউ',
+      subtitle: 'PHP, WordPress, Node.js, Python, Mobile SDK নির্দেশিকা',
+      badge: 'Ecosystem',
+      badgeColor: 'bg-slate-800 text-slate-300 border-slate-700',
+      icon: Layers
     }
   ];
 
@@ -152,21 +154,15 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
         {/* Top Header */}
         <div className="p-4 border-b border-slate-800 bg-slate-950/70 backdrop-blur-md flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 border border-amber-500/40 p-0.5 shadow-md shrink-0 flex items-center justify-center">
-              <img
-                src="/logo.png"
-                alt="shurjoPay Logo"
-                className="w-full h-full object-cover rounded-lg"
-              />
-            </div>
+            <ConceptBrandLogo size="md" />
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-white tracking-tight">shurjoPay</h2>
-                <span className="text-[9px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded-full">
-                  Hub v2.0
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-sm font-bold text-white tracking-tight">SPay DevHub</h2>
+                <span className="text-[9px] font-semibold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded-full">
+                  Concept Demo
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">সকল প্রোগ্রাম ও মার্চেন্ট সার্ভিস</p>
+              <p className="text-[11px] text-slate-400">Independent Developer Showcase</p>
             </div>
           </div>
 
@@ -313,6 +309,22 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
             <ThemeToggle id="mobile-sidebar-theme-toggle" variant="sidebar-item" />
           </div>
 
+          {/* Visual Showcase Card in Mobile Sidebar */}
+          <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950/80 p-2.5 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-semibold text-slate-300">সূর্যপে গেটওয়ে ইকোসিস্টেম</span>
+              <span className="text-[10px] text-amber-400 font-mono">v2.0 Active</span>
+            </div>
+            <div className="aspect-[16/8] w-full rounded-lg overflow-hidden border border-slate-800/80">
+              <img
+                src="/images/developer_hub_banner_1789577203623.jpg"
+                alt="shurjoPay Gateway Ecosystem"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+
           {/* Section: Quick Actions */}
           <div className="space-y-2 pt-2 border-t border-slate-800/80">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1">
@@ -366,11 +378,14 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
         {/* Footer info */}
         <div className="p-3.5 border-t border-slate-800 bg-slate-950/90 shrink-0 text-center space-y-1">
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-300 font-mono">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>PSO Licensed Payment Engine</span>
+            <Code2 className="w-4 h-4 text-amber-400" />
+            <span>Independent Concept Prototype</span>
           </div>
           <p className="text-[11px] text-slate-400">
-            shurjoPay হেল্পলাইন: <a href="tel:09612748756" className="text-amber-400 underline font-mono">09612-shurjo (748756)</a>
+            Target Gateway: shurjoPay API v2 (Not affiliated with shurjoMukhi Ltd.)
+          </p>
+          <p className="text-[10px] text-slate-400">
+            shurjoPay Helpline for Merchants: <a href="tel:09612748756" className="text-amber-400 underline font-mono">09612-shurjo (748756)</a>
           </p>
         </div>
       </aside>
