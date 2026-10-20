@@ -3,6 +3,7 @@
   "appId": "1:32959905689:web:4c27dd98325ff0f4d2dd08",
   "apiKey": "AIzaSyD6MeDzhHuktnbV0fLUh34SNdZMtFnAIc4",
   "authDomain": "gen-lang-client-0768881149.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-shurjopayplugins-71ee31b1-e424-439c-bd7c-5d1abfb43629",
   "storageBucket": "gen-lang-client-0768881149.firebasestorage.app",
   "messagingSenderId": "32959905689",
   "measurementId": "",

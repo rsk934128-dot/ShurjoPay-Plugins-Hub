@@ -14,7 +14,13 @@ import { MerchantCredentialsConnectHub } from './components/MerchantCredentialsC
 import { ThemeToggle } from './components/ThemeToggle';
 import { ImageLightboxModal } from './components/ImageLightboxModal';
 import { ConceptBrandLogo } from './components/ConceptBrandLogo';
+import { BinanceBrandLogo } from './components/BinanceBrandLogo';
+import { BinanceAuthHub } from './components/BinanceAuthHub';
+import { BinanceLoginModal } from './components/BinanceLoginModal';
+import { ToastContainer } from './components/ToastContainer';
+import { useToast } from './context/ToastContext';
 import { getCurrentSessionUser, UserProfile } from './services/firebaseAuth';
+import { getStoredBinanceAuth, BinanceAuthUser } from './services/binanceAuth';
 import { PluginItem } from './types';
 import { 
   CreditCard, 
@@ -46,15 +52,18 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<'sandbox' | 'credentials' | 'workspace' | 'openbanking' | 'docs' | 'kyc' | 'plugins'>('sandbox');
+  const { success, info } = useToast();
+  const [activeView, setActiveView] = useState<'sandbox' | 'credentials' | 'binance' | 'workspace' | 'openbanking' | 'docs' | 'kyc' | 'plugins'>('sandbox');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [selectedPluginForSnippet, setSelectedPluginForSnippet] = useState<PluginItem | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Authentication & Saved User Data State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => getCurrentSessionUser());
+  const [binanceUser, setBinanceUser] = useState<BinanceAuthUser | null>(() => getStoredBinanceAuth());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isBinanceLoginModalOpen, setIsBinanceLoginModalOpen] = useState(false);
 
   // PWA Mobile Installation State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -160,6 +169,24 @@ export default function App() {
             </button>
 
             <button
+              id="nav-btn-binance"
+              onClick={() => setActiveView('binance')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                activeView === 'binance'
+                  ? 'bg-[#F0B90B] text-[#181A20] shadow-sm font-extrabold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <BinanceBrandLogo size="xs" />
+              <span>বাইনান্স অথ</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-extrabold ${
+                activeView === 'binance' ? 'bg-[#181A20]/20 text-[#181A20]' : 'bg-amber-500/20 text-amber-300'
+              }`}>
+                Crypto
+              </span>
+            </button>
+
+            <button
               id="nav-btn-workspace"
               onClick={() => setActiveView('workspace')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
@@ -254,6 +281,36 @@ export default function App() {
               Send Receipt
             </button>
 
+            {/* Quick Binance Auth Connection Chip */}
+            <button
+              id="header-binance-quick-btn"
+              onClick={() => {
+                if (binanceUser) {
+                  setActiveView('binance');
+                } else {
+                  setIsBinanceLoginModalOpen(true);
+                }
+              }}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                binanceUser
+                  ? 'bg-[#F0B90B]/15 text-[#F0B90B] border-[#F0B90B]/40 hover:bg-[#F0B90B]/25'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700/80 hover:border-[#F0B90B]/50 hover:text-white'
+              }`}
+              title={binanceUser ? `বাইনান্স অ্যাক্টিভ (${binanceUser.displayName}) - ভিউ করুন` : 'বাইনান্স দিয়ে সাইন ইন / কানেক্ট করুন'}
+            >
+              <BinanceBrandLogo size="xs" />
+              <span className="hidden xl:inline">
+                {binanceUser ? 'Binance Connected' : 'Binance Login'}
+              </span>
+              {binanceUser ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              ) : (
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono hidden xl:inline">
+                  SSO
+                </span>
+              )}
+            </button>
+
             {/* Global Theme Toggle (Desktop) */}
             <ThemeToggle id="header-desktop-theme-toggle" />
 
@@ -303,6 +360,26 @@ export default function App() {
               title="স্মার্টফোনে অ্যাপ ইনস্টল করুন"
             >
               <Smartphone className="w-4 h-4" />
+            </button>
+
+            {/* Quick Binance Mobile Icon */}
+            <button
+              id="header-mobile-binance-btn"
+              onClick={() => {
+                if (binanceUser) {
+                  setActiveView('binance');
+                } else {
+                  setIsBinanceLoginModalOpen(true);
+                }
+              }}
+              className={`p-2 rounded-xl border transition-colors shrink-0 flex items-center justify-center ${
+                binanceUser
+                  ? 'bg-[#F0B90B]/20 border-[#F0B90B]/50 text-[#F0B90B]'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-[#F0B90B]/40'
+              }`}
+              title={binanceUser ? 'বাইনান্স হাব দেখুন' : 'বাইনান্স কানেক্ট করুন'}
+            >
+              <BinanceBrandLogo size="xs" />
             </button>
 
             {/* Quick User Button */}
@@ -449,15 +526,37 @@ export default function App() {
           <MerchantCredentialsConnectHub
             onNavigateToSimulator={() => setActiveView('sandbox')}
             onNavigateToDocs={() => setActiveView('docs')}
+            onNavigateToBinance={() => setActiveView('binance')}
+            onSaveCredentials={(mode) => {
+              // Confirmation hook
+            }}
           />
         )}
 
-        {activeView === 'sandbox' && <SandboxSimulator />}
+        {activeView === 'binance' && (
+          <BinanceAuthHub
+            onOpenSandbox={() => setActiveView('sandbox')}
+            onOpenDocs={() => setActiveView('docs')}
+            onAuthChange={(user) => {
+              setBinanceUser(user);
+              setCurrentUser(getCurrentSessionUser());
+            }}
+          />
+        )}
+
+        {activeView === 'sandbox' && (
+          <SandboxSimulator onOpenAuthModal={() => setIsAuthModalOpen(true)} />
+        )}
 
         {activeView === 'docs' && <ApiDocumentation />}
 
         {activeView === 'kyc' && (
-          <MerchantKycCompliance onOpenSandbox={() => setActiveView('sandbox')} />
+          <MerchantKycCompliance
+            onOpenSandbox={() => setActiveView('sandbox')}
+            onKycSubmitted={() => {
+              // KYC submission hook
+            }}
+          />
         )}
 
         {activeView === 'openbanking' && (
@@ -465,7 +564,12 @@ export default function App() {
         )}
 
         {activeView === 'workspace' && (
-          <GoogleWorkspaceAgentHub onOpenSandbox={() => setActiveView('sandbox')} />
+          <GoogleWorkspaceAgentHub
+            onOpenSandbox={() => setActiveView('sandbox')}
+            onBackupSuccess={(fileName, type) => {
+              // Backup success hook
+            }}
+          />
         )}
 
         {/* Code Snippet Drawer/Modal if clicked */}
@@ -707,6 +811,16 @@ export default function App() {
         }}
       />
 
+      {/* Global Binance Dedicated Login & Connection Modal */}
+      <BinanceLoginModal
+        isOpen={isBinanceLoginModalOpen}
+        onClose={() => setIsBinanceLoginModalOpen(false)}
+        onSuccess={(bUser) => {
+          setBinanceUser(bUser);
+          setCurrentUser(getCurrentSessionUser());
+        }}
+      />
+
       {/* User Profile & Saved Data Manager Modal */}
       {currentUser && (
         <UserProfileModal
@@ -733,6 +847,9 @@ export default function App() {
           badge={activeLightboxImage.badge}
         />
       )}
+
+      {/* Global Toast Notification System */}
+      <ToastContainer />
     </div>
   );
 }

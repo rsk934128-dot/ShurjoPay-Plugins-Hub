@@ -25,12 +25,17 @@ import {
   saveUserKycData 
 } from '../services/userData';
 import { getCurrentSessionUser } from '../services/firebaseAuth';
+import { toast } from '../context/ToastContext';
 
 interface MerchantKycComplianceProps {
   onOpenSandbox?: () => void;
+  onKycSubmitted?: () => void;
 }
 
-export const MerchantKycCompliance: React.FC<MerchantKycComplianceProps> = ({ onOpenSandbox }) => {
+export const MerchantKycCompliance: React.FC<MerchantKycComplianceProps> = ({
+  onOpenSandbox,
+  onKycSubmitted
+}) => {
   const currentUser = getCurrentSessionUser();
   const uid = currentUser?.uid || 'guest_merchant';
 
@@ -67,6 +72,16 @@ export const MerchantKycCompliance: React.FC<MerchantKycComplianceProps> = ({ on
       setIsVerifying(false);
       setSaveFeedback('কেওয়াইসি ও ব্যবসায়িক নথিসমূহ সফলভাবে সংরক্ষিত ও সিস্টেম দ্বারা যাচাই করা হয়েছে!');
       setTimeout(() => setSaveFeedback(null), 3500);
+
+      // Global Toast Feedback
+      toast.success(
+        'KYC কমপ্লায়েন্স ফর্ম জমা সম্পন্ন',
+        'TIN সার্টিফিকেট, ট্রেড লাইসেন্স, NID ও পাসপোর্টের নথি সফলভাবে যাচাইয়ের জন্য গৃহীত হয়েছে।'
+      );
+
+      if (onKycSubmitted) {
+        onKycSubmitted();
+      }
     }, 600);
   };
 

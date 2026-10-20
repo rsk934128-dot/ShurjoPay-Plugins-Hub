@@ -42,12 +42,17 @@ import {
 } from '../services/googleDriveBackupAgent';
 import { getCurrentSessionUser } from '../services/firebaseAuth';
 import { getUserTransactions } from '../services/userData';
+import { toast } from '../context/ToastContext';
 
 interface GoogleWorkspaceAgentHubProps {
   onOpenSandbox?: () => void;
+  onBackupSuccess?: (fileName: string, type: string) => void;
 }
 
-export const GoogleWorkspaceAgentHub: React.FC<GoogleWorkspaceAgentHubProps> = ({ onOpenSandbox }) => {
+export const GoogleWorkspaceAgentHub: React.FC<GoogleWorkspaceAgentHubProps> = ({
+  onOpenSandbox,
+  onBackupSuccess
+}) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'gmail' | 'drive' | 'rules' | 'logs'>('overview');
   
   // Workspace Auth state
@@ -194,8 +199,19 @@ export const GoogleWorkspaceAgentHub: React.FC<GoogleWorkspaceAgentHubProps> = (
       setBackupHistory(getLocalBackupHistory());
       setBackupNotice(`ব্যাকআপ সফল! Google Drive-এ ফাইল আপলোড সম্পন্ন হয়েছে: ${backupResult.name}`);
       setTimeout(() => setBackupNotice(null), 6000);
+
+      // Global Toast Feedback
+      toast.success(
+        'ক্লাউড ব্যাকআপ সফল হয়েছে',
+        `Google Drive-এ ${type === 'transactions_ledger' ? 'ট্রানজ্যাকশন লেজার' : type === 'openbanking_mandates' ? 'ওপেন ব্যাংকিং ম্যানডেট' : 'সিস্টেম স্ন্যাপশট'} ফাইল (${backupResult.name}) আপলোড সম্পন্ন হয়েছে!`
+      );
+
+      if (onBackupSuccess) {
+        onBackupSuccess(backupResult.name, type);
+      }
     } catch (err: any) {
       setBackupNotice(`ব্যাকআপ ব্যর্থ হয়েছে: ${err.message}`);
+      toast.error('ব্যাকআপ সম্পন্ন করা যায়নি', err.message || 'অনুগ্রহ করে পুনরায় চেষ্টা করুন।');
     } finally {
       setIsBackingUp(false);
     }

@@ -3,24 +3,25 @@ import {
   X, 
   Lock, 
   Mail, 
-  User, 
   Store, 
   ShieldCheck, 
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
   AlertCircle,
-  KeyRound,
   LogIn,
   UserPlus
 } from 'lucide-react';
 import { 
-  registerWithEmail, 
-  loginWithEmail, 
+  signInWithGoogle, 
   loginWithDemoMerchant, 
-  UserProfile 
+  UserProfile,
+  setCurrentSessionUser
 } from '../services/firebaseAuth';
 import { ConceptBrandLogo } from './ConceptBrandLogo';
+import { BinanceBrandLogo } from './BinanceBrandLogo';
+import { BinanceLoginModal } from './BinanceLoginModal';
+import { createDemoBinanceMerchant, saveBinanceAuth, BinanceAuthUser } from '../services/binanceAuth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -33,79 +34,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  
-  // Login fields
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Register fields
-  const [regName, setRegName] = useState('');
-  const [regMerchant, setRegMerchant] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regStoreId, setRegStoreId] = useState('1');
-  const [regPrefix, setRegPrefix] = useState('sp');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isBinanceModalOpen, setIsBinanceModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setError(null);
-    if (!loginEmail || !loginPassword) {
-      setError('ইমেইল এবং পাসওয়ার্ড উভয়ই আবশ্যক।');
-      return;
-    }
-
     setLoading(true);
     try {
-      const user = await loginWithEmail(loginEmail, loginPassword);
-      setSuccessMsg('সফলভাবে লগইন হয়েছে!');
-      setTimeout(() => {
-        onSuccess(user);
-        onClose();
-      }, 600);
-    } catch (err: any) {
-      setError(err.message || 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!regEmail || !regPassword || !regName) {
-      setError('নাম, ইমেইল এবং পাসওয়ার্ড আবশ্যক।');
-      return;
-    }
-
-    if (regPassword.length < 6) {
-      setError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const user = await registerWithEmail(
-        regEmail,
-        regPassword,
-        regName,
-        regMerchant || 'Merchant Store',
-        regStoreId || 1,
-        regPrefix || 'sp'
-      );
-      setSuccessMsg('অভিনন্দন! আপনার মার্চেন্ট অ্যাকাউন্ট তৈরি হয়েছে।');
+      const user = await signInWithGoogle();
+      setSuccessMsg('Google অ্যাকাউন্ট দিয়ে সফলভাবে সাইন ইন হয়েছে!');
       setTimeout(() => {
         onSuccess(user);
         onClose();
       }, 700);
     } catch (err: any) {
-      setError(err.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
+      console.error(err);
+      setError(err.message || 'Google সাইন-ইন ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
     }
@@ -116,7 +64,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
     try {
       const user = await loginWithDemoMerchant();
-      setSuccessMsg('স্যান্ডবক্স টেস্ট মার্চেন্ট হিসেবে লগইন সফল!');
+      setSuccessMsg('স্যান্ডবক্স টেস্ট মার্চেন্ট হিসেবে প্রবেশ সফল!');
       setTimeout(() => {
         onSuccess(user);
         onClose();
@@ -126,6 +74,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBinanceSignIn = () => {
+    setIsBinanceModalOpen(true);
   };
 
   return (
@@ -141,51 +93,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-slate-100">
-                  {mode === 'login' ? 'মার্চেন্ট লগইন (Firebase Auth)' : 'নতুন মার্চেন্ট রেজিস্ট্রেশন'}
+                  মার্চেন্ট অথেনটিকেশন (Firebase)
                 </h3>
                 <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono font-medium">
-                  Firebase
+                  Cloud DB
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                ডাটা ও টেস্ট ট্রানজ্যাকশন সেভ রাখতে লগইন করুন
+                ক্লাউড ডাটাবেজ ও ট্রানজ্যাকশন হিস্টোরি সিঙ্ক করতে লগইন করুন
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Tab switch */}
-        <div className="grid grid-cols-2 p-1.5 bg-slate-950 border-b border-slate-800 text-xs">
-          <button
-            type="button"
-            onClick={() => { setMode('login'); setError(null); }}
-            className={`py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all ${
-              mode === 'login'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            লগইন (Sign In)
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('register'); setError(null); }}
-            className={`py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all ${
-              mode === 'register'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            রেজিস্ট্রেশন (Register)
           </button>
         </div>
 
@@ -205,169 +129,100 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* LOGIN FORM */}
-          {mode === 'login' && (
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
-                  ইমেইল এড্রেস (Email)
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="merchant@example.com"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+          <div className="space-y-3">
+            {/* Real Firebase Google Sign-In button */}
+            <button
+              id="google-signin-btn"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full py-3 px-4 bg-white hover:bg-slate-100 disabled:opacity-60 text-slate-900 font-semibold text-xs rounded-xl flex items-center justify-center gap-3 shadow-md transition-all cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  পাসওয়ার্ড (Password)
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
                 />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/10 transition-all"
-              >
-                {loading ? 'লগইন হচ্ছে...' : 'লগইন করুন'}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-
-              <div className="pt-2">
-                <div className="relative flex py-1 items-center">
-                  <div className="flex-grow border-t border-slate-800"></div>
-                  <span className="flex-shrink mx-2 text-[10px] text-slate-500 uppercase tracking-wider">অথবা দ্রুত প্রবেশ</span>
-                  <div className="flex-grow border-t border-slate-800"></div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleDemoLogin}
-                  disabled={loading}
-                  className="mt-2 w-full py-2 px-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs text-slate-300 hover:text-white flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>১-ক্লিকে টেস্ট মার্চেন্ট লগইন (Sandbox)</span>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* REGISTER FORM */}
-          {mode === 'register' && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  আপনার পুরো নাম (Full Name)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="যেমন: মোঃ কামরুল হাসান"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Store className="w-3.5 h-3.5 text-slate-400" />
-                  মার্চেন্ট / প্রতিষ্ঠানের নাম (Business Name)
-                </label>
-                <input
-                  type="text"
-                  placeholder="যেমন: ঢাকা ই-কমার্স স্টোর"
-                  value={regMerchant}
-                  onChange={(e) => setRegMerchant(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
-              </div>
+              </svg>
+              <span>{loading ? 'অথেনটিকেশন হচ্ছে...' : 'Google দিয়ে সাইন ইন করুন (Firebase Auth)'}</span>
+            </button>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
-                  ইমেইল এড্রেস (Email)
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="merchant@example.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+            {/* Official Binance Sign-In button */}
+            <button
+              id="binance-signin-btn"
+              type="button"
+              onClick={handleBinanceSignIn}
+              disabled={loading}
+              className="w-full py-3 px-4 bg-[#F0B90B] hover:bg-[#FCD535] disabled:opacity-60 text-[#181A20] font-bold text-xs rounded-xl flex items-center justify-center gap-3 shadow-md transition-all cursor-pointer shadow-amber-500/10"
+            >
+              <BinanceBrandLogo size="xs" />
+              <span>{loading ? 'অথেনটিকেশন হচ্ছে...' : 'বাইনান্স দিয়ে সাইন ইন (Binance OAuth / Web3)'}</span>
+            </button>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-800"></div>
+              <span className="flex-shrink mx-2 text-[10px] text-slate-500 uppercase tracking-wider">অথবা ডেমো ট্রাই করুন</span>
+              <div className="flex-grow border-t border-slate-800"></div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Store ID</label>
-                  <input
-                    type="text"
-                    value={regStoreId}
-                    onChange={(e) => setRegStoreId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700/80 rounded text-xs font-mono text-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Prefix</label>
-                  <input
-                    type="text"
-                    value={regPrefix}
-                    onChange={(e) => setRegPrefix(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700/80 rounded text-xs font-mono text-slate-200"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2 py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-emerald-500/10 transition-all"
-              >
-                {loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : 'অ্যাকাউন্ট তৈরি করুন (রেজিস্টার)'}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </form>
-          )}
+            {/* Quick Demo Merchant */}
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full py-2.5 px-3 bg-slate-950 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 rounded-xl text-xs text-slate-300 hover:text-white flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>১-ক্লিকে টেস্ট মার্চেন্ট লগইন (Sandbox Mode)</span>
+            </button>
+          </div>
 
           {/* Secure Firebase footer note */}
-          <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2 text-[11px] text-slate-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>আপনার পাসওয়ার্ড ও ক্রেডেনশিয়াল এনক্রিপ্টেড এবং ডাটা ব্রাউজারে সুরক্ষিত থাকে।</span>
+          <div className="pt-3 border-t border-slate-800/80 space-y-1">
+            <div className="flex items-center gap-2 text-[11px] text-slate-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Firestore Enterprise ডাটাবেজে আপনার রিয়েল-টাইম তথ্য ও সেটিংস এনক্রিপ্টেড থাকে।</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-mono pl-6">
+              Project: gen-lang-client-0768881149
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Dedicated Binance Login Portal Modal */}
+      <BinanceLoginModal
+        isOpen={isBinanceModalOpen}
+        onClose={() => setIsBinanceModalOpen(false)}
+        onSuccess={(bUser: BinanceAuthUser) => {
+          setIsBinanceModalOpen(false);
+          const userProfile: UserProfile = {
+            uid: bUser.uid,
+            email: bUser.email,
+            displayName: `${bUser.displayName} (Binance)`,
+            merchantName: `${bUser.displayName} - Binance Pay`,
+            storeId: 88,
+            prefix: 'bn',
+            createdAt: bUser.connectedAt,
+            provider: 'local_persistent',
+          };
+          setCurrentSessionUser(userProfile);
+          onSuccess(userProfile);
+          onClose();
+        }}
+      />
     </div>
   );
 };

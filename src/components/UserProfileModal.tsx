@@ -33,6 +33,15 @@ import {
   saveUserKycData,
   MerchantKycData
 } from '../services/userData';
+import { toast } from '../context/ToastContext';
+import { BinanceBrandLogo } from './BinanceBrandLogo';
+import { 
+  getStoredBinanceAuth, 
+  clearBinanceAuth, 
+  createDemoBinanceMerchant, 
+  saveBinanceAuth, 
+  BinanceAuthUser 
+} from '../services/binanceAuth';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -49,7 +58,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onLogout,
   onProfileUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'credentials' | 'kyc' | 'transactions'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'credentials' | 'kyc' | 'transactions' | 'binance'>('profile');
+  const [binanceAccount, setBinanceAccount] = useState<BinanceAuthUser | null>(() => getStoredBinanceAuth());
   
   // Profile edit
   const [displayName, setDisplayName] = useState(user.displayName);
@@ -102,6 +112,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     saveUserSettings(user.uid, settings);
     setSavedStatus('গেটওয়ে ক্রেডেনশিয়াল সফলভাবে সেভ করা হয়েছে!');
     setTimeout(() => setSavedStatus(null), 2500);
+    toast.success('মার্চেন্ট ক্রেডেনশিয়াল সংরক্ষিত হয়েছে', 'প্রোফাইল থেকে আপনার গেটওয়ে এপিআই তথ্য সফলভাবে হালনাগাদ করা হয়েছে।');
   };
 
   const handleSaveKyc = (e: React.FormEvent) => {
@@ -109,6 +120,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     saveUserKycData(user.uid, kycData);
     setSavedStatus('টিআইএন, লাইসেন্স, এনআইডি ও পাসপোর্ট তথ্য সফলভাবে সেভ হয়েছে!');
     setTimeout(() => setSavedStatus(null), 2500);
+    toast.success('KYC নথি সফলভাবে সংরক্ষিত', 'টিআইএন, ট্রেড লাইসেন্স, এনআইডি ও পাসপোর্টের তথ্য সেভ হয়েছে।');
   };
 
   const handleClearTransactions = () => {
@@ -218,6 +230,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           >
             <History className="w-3.5 h-3.5" />
             সেভ করা ট্রানজ্যাকশন ({transactions.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('binance')}
+            className={`pb-2.5 px-3 font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+              activeTab === 'binance'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <BinanceBrandLogo size="xs" />
+            বাইনান্স ইন্টিগ্রেশন
+            {binanceAccount && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            )}
           </button>
         </div>
 
@@ -708,6 +736,102 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 5: Binance Integration */}
+          {activeTab === 'binance' && (
+            <div className="space-y-4 text-xs">
+              {binanceAccount ? (
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+                        <BinanceBrandLogo size="xs" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-white text-sm">{binanceAccount.displayName}</h4>
+                          <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.2 rounded-full font-mono">
+                            {binanceAccount.kycStatus}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-mono">
+                          UID: {binanceAccount.binanceUid} • VIP {binanceAccount.vipLevel}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await clearBinanceAuth();
+                        setBinanceAccount(null);
+                        toast.info('বাইনান্স অ্যাকাউন্ট বিচ্ছিন্ন করা হয়েছে');
+                      }}
+                      className="py-1.5 px-3 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      ডিসকানেক্ট
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">অথেন্টিকেশন মেথড</span>
+                      <span className="font-mono text-amber-300 uppercase font-semibold">
+                        {binanceAccount.authMethod.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">অ্যাকাউন্ট টাইপ</span>
+                      <span className="text-slate-200">{binanceAccount.accountType}</span>
+                    </div>
+                  </div>
+
+                  {binanceAccount.walletAddress && (
+                    <div className="pt-2 border-t border-slate-800">
+                      <span className="text-slate-400 block text-[10px] mb-1">BEP-20 / BSC ওয়ালেট</span>
+                      <code className="text-[11px] font-mono text-slate-300 bg-slate-900 px-2 py-1.5 rounded block border border-slate-800 break-all">
+                        {binanceAccount.walletAddress}
+                      </code>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-800 space-y-1">
+                    <span className="text-slate-400 block text-[10px]">ক্রিপ্টো ব্যালেন্স সারসংক্ষেপ:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {binanceAccount.balances.map(b => (
+                        <div key={b.asset} className="bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800 text-xs">
+                          <span className="text-amber-400 font-bold font-mono mr-1.5">{b.asset}</span>
+                          <span className="text-slate-200 font-mono">{b.free}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-6 text-center space-y-4">
+                  <BinanceBrandLogo size="md" className="mx-auto" />
+                  <div>
+                    <h4 className="font-bold text-white text-sm">কোনো বাইনান্স অ্যাকাউন্ট সংযুক্ত নেই</h4>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      ক্রিপ্টো পেমেন্ট গ্রহণ ও বাইনান্স পে এপিআই অটোমেশনের জন্য সংযোগ করুন।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const demo = createDemoBinanceMerchant();
+                      saveBinanceAuth(demo);
+                      setBinanceAccount(demo);
+                      toast.success('টেস্ট বাইনান্স মার্চেন্ট সফলভাবে কানেক্ট হয়েছে!');
+                    }}
+                    className="py-2 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                  >
+                    ১-ক্লিকে টেস্ট বাইনান্স কানেক্ট করুন
+                  </button>
                 </div>
               )}
             </div>

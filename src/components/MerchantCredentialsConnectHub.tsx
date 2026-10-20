@@ -26,8 +26,10 @@ import {
   Mail,
   Info,
   Building2,
-  Play
+  Play,
+  ArrowRight
 } from 'lucide-react';
+import { BinanceBrandLogo } from './BinanceBrandLogo';
 import { getCurrentSessionUser } from '../services/firebaseAuth';
 import {
   getUserSettings,
@@ -35,17 +37,23 @@ import {
   UserMerchantSettings
 } from '../services/userData';
 import { SANDBOX_CREDENTIALS } from '../data';
+import { toast } from '../context/ToastContext';
 
 interface MerchantCredentialsConnectHubProps {
   onNavigateToSimulator?: () => void;
   onNavigateToDocs?: () => void;
+  onNavigateToBinance?: () => void;
+  onSaveCredentials?: (mode: 'sandbox' | 'live') => void;
 }
 
 type CodeFramework = 'env' | 'nodejs' | 'laravel' | 'python' | 'nextjs' | 'flutter' | 'curl';
 
+
 export const MerchantCredentialsConnectHub: React.FC<MerchantCredentialsConnectHubProps> = ({
   onNavigateToSimulator,
-  onNavigateToDocs
+  onNavigateToDocs,
+  onNavigateToBinance,
+  onSaveCredentials
 }) => {
   const [currentUser] = useState(() => getCurrentSessionUser());
   const effectiveUid = currentUser ? currentUser.uid : 'guest';
@@ -131,6 +139,16 @@ export const MerchantCredentialsConnectHub: React.FC<MerchantCredentialsConnectH
     setSettings(updated);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+
+    // Global Toast Feedback
+    toast.success(
+      'মার্চেন্ট ক্রেডেনশিয়াল সংরক্ষিত হয়েছে',
+      `${mode === 'sandbox' ? 'স্যান্ডবক্স (Sandbox)' : 'লাইভ (Production)'} গেটওয়ে ইউজারনেম ও পাসওয়ার্ড সফলভাবে সংরক্ষিত হয়েছে।`
+    );
+
+    if (onSaveCredentials) {
+      onSaveCredentials(mode);
+    }
   };
 
   const handleFillSandboxDefaults = () => {
@@ -628,7 +646,49 @@ curl -X POST "${baseUrl}/api/verification" \\
               <Sparkles className="w-3.5 h-3.5" />
               পাবলিক স্যান্ডবক্স টেস্ট ক্রেডেনশিয়াল অটো-ফিল করুন
             </button>
-          )}
+        </div>
+
+        {/* Binance Crypto Gateway Integration Hub Card */}
+        <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950/80 p-4 rounded-xl border border-amber-500/25">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+              <BinanceBrandLogo size="xs" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white">Binance Pay &amp; Crypto Gateway</span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-semibold">
+                  OAuth 2.0 + HMAC-SHA512
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                আন্তর্জাতিক ক্রিপ্টো পেমেন্টের জন্য অফিশিয়াল Binance OAuth 2.0 এবং Merchant HMAC-SHA512 সিগনেচার সংযোগ।
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {onNavigateToBinance && (
+              <button
+                type="button"
+                id="btn-goto-binance-hub"
+                onClick={onNavigateToBinance}
+                className="w-full sm:w-auto px-3.5 py-2 bg-[#F0B90B] hover:bg-[#FCD535] text-[#181A20] font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <BinanceBrandLogo size="xs" />
+                <span>বাইনান্স অথ হাব</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <a
+              href="https://merchant.binance.com"
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-amber-400 text-xs flex items-center gap-1 transition-colors shrink-0"
+              title="Official Binance Merchant Portal"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
 

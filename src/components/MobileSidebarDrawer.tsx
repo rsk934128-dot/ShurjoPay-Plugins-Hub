@@ -26,8 +26,8 @@ import { ConceptBrandLogo } from './ConceptBrandLogo';
 interface MobileSidebarDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  activeView: 'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace' | 'credentials';
-  onSelectView: (view: 'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace' | 'credentials') => void;
+  activeView: 'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace' | 'credentials' | 'binance';
+  onSelectView: (view: 'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace' | 'credentials' | 'binance') => void;
   currentUser: UserProfile | null;
   onOpenAuthModal: () => void;
   onOpenProfileModal: () => void;
@@ -69,7 +69,7 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  const handleItemClick = (view: 'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace' | 'credentials') => {
+  const handleItemClick = (view: 'plugins' | 'sandbox' | 'docs' | 'kyc' | 'openbanking' | 'workspace' | 'credentials' | 'binance') => {
     onSelectView(view);
     onClose();
   };
@@ -82,6 +82,14 @@ export const MobileSidebarDrawer: React.FC<MobileSidebarDrawerProps> = ({
       badge: 'লাইভ ডেমো',
       badgeColor: 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60',
       icon: Play
+    },
+    {
+      id: 'binance' as const,
+      title: 'বাইনান্স অথেন্টিকেশন হাব',
+      subtitle: 'Binance OAuth 2.0, Binance Pay HMAC-SHA512 ও Web3',
+      badge: 'Crypto Auth',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      icon: Key
     },
     {
       id: 'credentials' as const,

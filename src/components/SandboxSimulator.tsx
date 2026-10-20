@@ -3,12 +3,26 @@ import { Play, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Key, ShieldChec
 import { SANDBOX_CREDENTIALS } from '../data';
 import { PaymentRequestData, VerificationResponse, ApiRequestLogEntry } from '../types';
 import { getCurrentSessionUser } from '../services/firebaseAuth';
-import { saveUserTransaction, getUserSettings } from '../services/userData';
+import { 
+  saveUserTransaction, 
+  saveUserTransactionAsync,
+  getUserTransactions,
+  fetchTransactionsFromFirestore,
+  subscribeToUserTransactions,
+  deleteUserTransaction,
+  clearUserTransactions,
+  SavedTransaction,
+  getUserSettings 
+} from '../services/userData';
 import { sendPaymentNotificationEmail } from '../services/gmailNotificationAgent';
 import { uploadBackupToGoogleDrive } from '../services/googleDriveBackupAgent';
 import { ApiRequestLogConsole } from './ApiRequestLogConsole';
+import { RecentRequestsHistory } from './RecentRequestsHistory';
 import { PaymentQrGenerator } from './PaymentQrGenerator';
 import { ImageLightboxModal } from './ImageLightboxModal';
+import { BinanceBrandLogo } from './BinanceBrandLogo';
+import { toast } from '../context/ToastContext';
+import { auth } from '../services/firebaseConfig';
 
 // Helper to format ISO timestamp into HH:MM:SS.mmm
 function formatLogTime(d: Date): string {
@@ -210,11 +224,85 @@ function createDefaultSimulatorLogs(): ApiRequestLogEntry[] {
   ];
 }
 
-export const SandboxSimulator: React.FC = () => {
+function createInitialTransactions(effectiveUid: string): SavedTransaction[] {
+  const now = Date.now();
+  return [
+    {
+      id: `tx_${now - 150000}_01`,
+      userId: effectiveUid,
+      orderId: 'sp_984123',
+      spOrderId: 'sp6214d7056e83a',
+      amount: 1000,
+      currency: 'BDT',
+      customerName: 'Maharab Kibria',
+      customerPhone: '01766615677',
+      bankTrxId: 'TXN_B38X99A',
+      spCode: '1000',
+      status: 'Successful',
+      method: 'Open Banking (NPSB / Binimoy)',
+      createdAt: new Date(now - 150000).toISOString(),
+      endpoint: '/api/verification',
+      durationMs: 138,
+      syncedToFirestore: true
+    },
+    {
+      id: `tx_${now - 360000}_02`,
+      userId: effectiveUid,
+      orderId: 'sp_984119',
+      spOrderId: 'sp6214d291884bb',
+      amount: 2500,
+      currency: 'BDT',
+      customerName: 'Sheikh Farid',
+      customerPhone: '01812345678',
+      bankTrxId: 'BKASH_TRX_8722',
+      spCode: '1000',
+      status: 'Successful',
+      method: 'bKash Online',
+      createdAt: new Date(now - 360000).toISOString(),
+      endpoint: '/api/verification',
+      durationMs: 164,
+      syncedToFirestore: true
+    },
+    {
+      id: `tx_${now - 600000}_03`,
+      userId: effectiveUid,
+      orderId: 'sp_984110',
+      spOrderId: 'sp6214cb9014efa',
+      amount: 450,
+      currency: 'BDT',
+      customerName: 'Nasir Uddin',
+      customerPhone: '01912987654',
+      bankTrxId: '0',
+      spCode: '1002',
+      status: 'Cancelled',
+      method: 'Nagad Checkout',
+      createdAt: new Date(now - 600000).toISOString(),
+      endpoint: '/api/verification',
+      durationMs: 110,
+      syncedToFirestore: true
+    }
+  ];
+}
+
+interface SandboxSimulatorProps {
+  onOpenAuthModal?: () => void;
+}
+
+export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ onOpenAuthModal }) => {
   const [step, setStep] = useState<'token' | 'checkout' | 'payment_gateway' | 'verification' | 'completed'>('token');
   const [credentials, setCredentials] = useState(SANDBOX_CREDENTIALS);
   const [currentUser, setCurrentUser] = useState(getCurrentSessionUser());
   const [txSavedNotice, setTxSavedNotice] = useState(false);
+
+  // Recent transactions stored in Firestore and Local
+  const [recentTransactions, setRecentTransactions] = useState<SavedTransaction[]>(() => {
+    const user = getCurrentSessionUser();
+    const effectiveUid = user ? user.uid : 'guest';
+    const local = getUserTransactions(effectiveUid);
+    if (local && local.length > 0) return local;
+    return createInitialTransactions(effectiveUid);
+  });
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   useEffect(() => {
     const user = getCurrentSessionUser();
@@ -233,6 +321,24 @@ export const SandboxSimulator: React.FC = () => {
         prefix: userConfig.activeMode === 'live' && userConfig.livePrefix ? userConfig.livePrefix : userConfig.sandboxPrefix,
         client_ip: userConfig.clientIp || prev.client_ip
       }));
+    }
+
+    // Attach real-time Firestore listener if user is logged into Firebase
+    if (auth.currentUser) {
+      setIsLoadingHistory(true);
+      fetchTransactionsFromFirestore(auth.currentUser.uid).then((cloudTxs) => {
+        if (cloudTxs.length > 0) {
+          setRecentTransactions(cloudTxs);
+        }
+        setIsLoadingHistory(false);
+      }).catch(() => setIsLoadingHistory(false));
+
+      const unsubscribe = subscribeToUserTransactions(auth.currentUser.uid, (liveList) => {
+        if (liveList.length > 0) {
+          setRecentTransactions(liveList);
+        }
+      });
+      return () => unsubscribe();
     }
   }, []);
   
@@ -430,6 +536,27 @@ export const SandboxSimulator: React.FC = () => {
       };
 
       setApiLogs((prev) => [newLog, ...prev]);
+
+      // Record initiated checkout in recent requests history
+      const activeUser = getCurrentSessionUser();
+      const effectiveUid = activeUser ? activeUser.uid : 'guest';
+      const initiatedTx: SavedTransaction = {
+        id: `tx_${now.getTime()}_init`,
+        userId: effectiveUid,
+        orderId: paymentForm.order_id,
+        spOrderId: generatedSpId,
+        amount: Number(paymentForm.amount),
+        currency: paymentForm.currency,
+        customerName: paymentForm.customer_name,
+        customerPhone: paymentForm.customer_phone,
+        status: 'Initiated',
+        method: 'Secret Pay Checkout',
+        createdAt: now.toISOString(),
+        endpoint: '/api/secret-pay',
+        durationMs: elapsed
+      };
+      const updatedInitiated = saveUserTransaction(effectiveUid, initiatedTx);
+      setRecentTransactions(updatedInitiated);
     }, 700);
   };
 
@@ -540,25 +667,103 @@ export const SandboxSimulator: React.FC = () => {
         mockVerification
       ).then(() => setDriveBackupDone(true)).catch(() => {});
 
+      // Save test transaction log to Firebase Firestore
       const activeUser = getCurrentSessionUser();
-      if (activeUser) {
-        saveUserTransaction(activeUser.uid, {
-          id: `tx_${Date.now()}`,
-          orderId: paymentForm.order_id,
-          spOrderId: spOrderId,
-          amount: Number(paymentForm.amount),
-          currency: paymentForm.currency,
-          customerName: paymentForm.customer_name,
-          customerPhone: paymentForm.customer_phone,
-          bankTrxId: mockVerification.bank_trx_id,
-          spCode: mockVerification.sp_code,
-          status: mockVerification.transaction_status,
-          method: mockVerification.method,
-          createdAt: new Date().toISOString()
-        });
+      const effectiveUid = activeUser ? activeUser.uid : 'guest';
+      const verifiedTx: SavedTransaction = {
+        id: `tx_${now.getTime()}_${Math.random().toString(36).substring(2, 7)}`,
+        userId: effectiveUid,
+        orderId: paymentForm.order_id,
+        spOrderId: spOrderId,
+        amount: Number(paymentForm.amount),
+        currency: paymentForm.currency,
+        customerName: paymentForm.customer_name,
+        customerPhone: paymentForm.customer_phone,
+        bankTrxId: mockVerification.bank_trx_id,
+        spCode: mockVerification.sp_code,
+        status: mockVerification.transaction_status,
+        method: mockVerification.method,
+        createdAt: now.toISOString(),
+        endpoint: '/api/verification',
+        durationMs: elapsed
+      };
+
+      saveUserTransactionAsync(effectiveUid, verifiedTx).then(({ updated, syncedToFirestore }) => {
+        setRecentTransactions(updated);
         setTxSavedNotice(true);
-      }
+        if (syncedToFirestore) {
+          toast.success(
+            'ফায়ারবেস ফায়ারস্টোরে সংরক্ষিত হয়েছে',
+            `অর্ডার ${paymentForm.order_id} রিয়েলটাইমে ক্লাউড ডাটাবেজে সেভ হয়েছে`
+          );
+        } else {
+          toast.info(
+            'টেস্ট ট্রানজ্যাকশন সংরক্ষিত হয়েছে',
+            `অর্ডার ${paymentForm.order_id} লোকাল ক্যাশে সেভ হয়েছে`
+          );
+        }
+      }).catch((err) => {
+        console.warn('Firestore transaction save warning:', err);
+      });
     }, 800);
+  };
+
+  const handleRefreshHistory = async () => {
+    const user = getCurrentSessionUser();
+    const effectiveUid = user ? user.uid : 'guest';
+    setIsLoadingHistory(true);
+    try {
+      if (auth.currentUser) {
+        const cloudTxs = await fetchTransactionsFromFirestore(auth.currentUser.uid);
+        if (cloudTxs.length > 0) {
+          setRecentTransactions(cloudTxs);
+        }
+        toast.success('ফায়ারস্টোর থেকে রিফ্রেশ হয়েছে', `${cloudTxs.length}টি ট্রানজ্যাকশন লোড করা হয়েছে`);
+      } else {
+        const local = getUserTransactions(effectiveUid);
+        setRecentTransactions(local);
+        toast.info('হিস্ট্রি রিফ্রেশ হয়েছে', `${local.length}টি রেকর্ড পাওয়া গেছে`);
+      }
+    } catch (e) {
+      toast.error('রিফ্রেশ ব্যর্থ হয়েছে', 'ডাটাবেজ কানেকশন চেক করুন');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleClearHistory = () => {
+    const user = getCurrentSessionUser();
+    const effectiveUid = user ? user.uid : 'guest';
+    clearUserTransactions(effectiveUid);
+    setRecentTransactions([]);
+  };
+
+  const handleDeleteTransaction = async (txId: string) => {
+    const user = getCurrentSessionUser();
+    const effectiveUid = user ? user.uid : 'guest';
+    const updated = await deleteUserTransaction(effectiveUid, txId);
+    setRecentTransactions(updated);
+  };
+
+  const handleSelectForReVerification = (orderSpId: string, custOrderId: string) => {
+    setSpOrderId(orderSpId);
+    setStep('verification');
+    toast.info('অর্ডার লোড করা হয়েছে', `${orderSpId} ভেরিফিকেশন টেস্ট করার জন্য তৈরি`);
+    const el = document.getElementById('simulator-verification-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleSeedSampleData = () => {
+    const user = getCurrentSessionUser();
+    const effectiveUid = user ? user.uid : 'guest';
+    const samples = createInitialTransactions(effectiveUid);
+    samples.forEach((sample) => {
+      saveUserTransaction(effectiveUid, sample);
+    });
+    setRecentTransactions(samples);
+    toast.success('স্যাম্পল টেস্ট লগ যুক্ত হয়েছে', '৩টি স্যাম্পল ট্রানজ্যাকশন সফলভাবে যোগ করা হয়েছে');
   };
 
   const handleReset = () => {
@@ -994,7 +1199,7 @@ export const SandboxSimulator: React.FC = () => {
               In production, the customer is redirected to <code className="text-amber-300 font-mono text-[11px]">{checkoutUrl}</code> to choose payment methods:
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
               <div 
                 id="channel-bkash-btn"
                 onClick={() => setSelectedPaymentChannel('bKash Direct')}
@@ -1064,6 +1269,21 @@ export const SandboxSimulator: React.FC = () => {
                 </span>
                 <span className="text-[10px] text-slate-400">App Scan &amp; Pay</span>
               </div>
+
+              <div 
+                id="channel-binance-pay-btn"
+                onClick={() => setSelectedPaymentChannel('Binance Pay (USDT / Crypto)')}
+                className={`p-3 rounded-lg text-center cursor-pointer transition-all border ${
+                  selectedPaymentChannel === 'Binance Pay (USDT / Crypto)'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 ring-1 ring-amber-400/40'
+                    : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+                }`}
+              >
+                <span className="block text-xs font-bold text-amber-400 flex items-center justify-center gap-1">
+                  <BinanceBrandLogo size="xs" /> Binance Pay
+                </span>
+                <span className="text-[10px] text-slate-400">USDT &amp; Web3</span>
+              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-800/80">
@@ -1116,7 +1336,7 @@ export const SandboxSimulator: React.FC = () => {
 
       {/* STEP 4: VERIFICATION & FINAL STATUS */}
       {step === 'verification' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+        <div id="simulator-verification-section" className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
@@ -1301,6 +1521,18 @@ export const SandboxSimulator: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Recent Requests & Test Transactions History (Stored in Firebase Firestore) */}
+      <RecentRequestsHistory
+        transactions={recentTransactions}
+        isLoading={isLoadingHistory}
+        onRefresh={handleRefreshHistory}
+        onClearHistory={handleClearHistory}
+        onDeleteTransaction={handleDeleteTransaction}
+        onSelectForReVerification={handleSelectForReVerification}
+        onOpenAuthModal={onOpenAuthModal}
+        onSeedSampleData={handleSeedSampleData}
+      />
 
       {/* Developer API Request Log & Debug Console */}
       <ApiRequestLogConsole logs={apiLogs} onClearLogs={handleClearLogs} />

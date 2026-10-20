@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with merchant identity and store config",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "merchantName": { "type": "string", "maxLength": 128 },
+        "storeId": { "type": "string", "maxLength": 64 },
+        "prefix": { "type": "string", "maxLength": 16 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "displayName"]
+    },
+    "MerchantSettings": {
+      "title": "MerchantSettings",
+      "description": "API configuration, sandbox & live credentials for shurjoPay merchant",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "activeMode": { "type": "string", "enum": ["sandbox", "live"] },
+        "sandboxUsername": { "type": "string", "maxLength": 128 },
+        "sandboxPassword": { "type": "string", "maxLength": 128 },
+        "sandboxPrefix": { "type": "string", "maxLength": 16 },
+        "sandboxStoreId": { "type": "string", "maxLength": 64 },
+        "sandboxBaseUrl": { "type": "string", "maxLength": 256 },
+        "liveUsername": { "type": "string", "maxLength": 128 },
+        "livePassword": { "type": "string", "maxLength": 128 },
+        "livePrefix": { "type": "string", "maxLength": 16 },
+        "liveStoreId": { "type": "string", "maxLength": 64 },
+        "liveBaseUrl": { "type": "string", "maxLength": 256 },
+        "clientIp": { "type": "string", "maxLength": 64 },
+        "defaultCurrency": { "type": "string", "enum": ["BDT", "USD"] },
+        "webhookUrl": { "type": "string", "maxLength": 512 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "activeMode", "sandboxUsername", "sandboxPrefix"]
+    },
+    "SavedTransaction": {
+      "title": "SavedTransaction",
+      "description": "Simulated or live transaction records logged by merchant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "orderId": { "type": "string", "maxLength": 128 },
+        "spOrderId": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 16 },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "customerPhone": { "type": "string", "maxLength": 32 },
+        "bankTrxId": { "type": "string", "maxLength": 128 },
+        "spCode": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "maxLength": 32 },
+        "method": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "endpoint": { "type": "string", "maxLength": 128 },
+        "durationMs": { "type": "number" },
+        "syncedToFirestore": { "type": "boolean" }
+      },
+      "required": ["id", "userId", "orderId", "spOrderId", "amount", "currency", "status"]
+    },
+    "MerchantKycDocument": {
+      "title": "MerchantKycDocument",
+      "description": "Merchant KYC and compliance registration data",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "tinNumber": { "type": "string", "maxLength": 64 },
+        "tinOwnerName": { "type": "string", "maxLength": 128 },
+        "tinTaxZone": { "type": "string", "maxLength": 64 },
+        "tinTaxCircle": { "type": "string", "maxLength": 64 },
+        "tinStatus": { "type": "string", "maxLength": 32 },
+        "tradeLicenseNumber": { "type": "string", "maxLength": 64 },
+        "tradeLicenseAuthority": { "type": "string", "maxLength": 128 },
+        "tradeLicenseStatus": { "type": "string", "maxLength": 32 },
+        "nidNumber": { "type": "string", "maxLength": 64 },
+        "nidNameEn": { "type": "string", "maxLength": 128 },
+        "nidStatus": { "type": "string", "maxLength": 32 },
+        "overallComplianceStatus": { "type": "string", "maxLength": 32 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "overallComplianceStatus"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile with display name and merchant identifiers"
+    },
+    "/users/{userId}/settings/merchant": {
+      "schema": "MerchantSettings",
+      "description": "Private merchant configuration and sandbox API credentials"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "SavedTransaction",
+      "description": "Private transaction ledger and verification histories"
+    },
+    "/users/{userId}/compliance/kyc": {
+      "schema": "MerchantKycDocument",
+      "description": "Private merchant KYC compliance documents and status"
+    }
+  }
+}

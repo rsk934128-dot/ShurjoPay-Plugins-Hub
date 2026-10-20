@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User Profile: /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 256
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 128;
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 128;
+      allow delete: if false;
+
+      // Merchant Settings Subcollection: /users/{userId}/settings/merchant
+      match /settings/merchant {
+        allow get: if isOwner(userId);
+        allow list: if false;
+        allow create, update: if isOwner(userId)
+          && request.resource.data.userId == userId
+          && request.resource.data.activeMode in ['sandbox', 'live'];
+        allow delete: if false;
+      }
+
+      // Transactions Subcollection: /users/{userId}/transactions/{transactionId}
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId) && isValidId(transactionId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(transactionId)
+          && request.resource.data.userId == userId
+          && request.resource.data.id is string
+          && request.resource.data.amount is number
+          && request.resource.data.currency in ['BDT', 'USD'];
+        allow update: if isOwner(userId)
+          && isValidId(transactionId)
+          && request.resource.data.userId == userId
+          && request.resource.data.id == resource.data.id;
+        allow delete: if isOwner(userId) && isValidId(transactionId);
+      }
+
+      // KYC Subcollection: /users/{userId}/compliance/kyc
+      match /compliance/kyc {
+        allow get: if isOwner(userId);
+        allow list: if false;
+        allow create, update: if isOwner(userId)
+          && request.resource.data.userId == userId;
+        allow delete: if false;
+      }
+    }
+  }
+}
