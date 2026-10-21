@@ -28,6 +28,7 @@ import {
 import { PostmanExportModal } from './PostmanExportModal';
 import { ApiMetricsDashboard } from './ApiMetricsDashboard';
 import { ApiLatencyRealtimeChart } from './ApiLatencyRealtimeChart';
+import { RealtimeLatencyReliabilityVisualizer } from './RealtimeLatencyReliabilityVisualizer';
 import { 
   PostmanConfig, 
   generatePostmanCollection, 
@@ -39,6 +40,10 @@ import { getCurrentSessionUser } from '../services/firebaseAuth';
 import { getUserSettings } from '../services/userData';
 
 export { POSTMAN_DOCUMENTER_BASE_URL };
+
+interface ApiDocumentationProps {
+  onNavigateToSimulator?: () => void;
+}
 
 interface EndpointDocItem {
   id: 'gateway_config' | 'realtime_latency' | 'get_token' | 'secret_pay' | 'verification';
@@ -98,7 +103,7 @@ const ENDPOINT_DOC_ITEMS: EndpointDocItem[] = [
   }
 ];
 
-export const ApiDocumentation: React.FC = () => {
+export const ApiDocumentation: React.FC<ApiDocumentationProps> = ({ onNavigateToSimulator }) => {
   const [activeTab, setActiveTab] = useState<'endpoints' | 'metrics' | 'response_codes' | 'credentials' | 'android_sdk'>('endpoints');
   const [searchQuery, setSearchQuery] = useState('');
   const [codeSearch, setCodeSearch] = useState('');
@@ -1229,12 +1234,20 @@ export const ApiDocumentation: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Real-Time API Response Latency & Reliability Trends Visualizer (Recharts) */}
+          <div className="pt-2">
+            <RealtimeLatencyReliabilityVisualizer onNavigateToSimulator={onNavigateToSimulator} />
+          </div>
         </div>
       )}
 
       {/* LIVE LATENCY & RELIABILITY METRICS TAB (RECHARTS) */}
       {activeTab === 'metrics' && (
-        <ApiMetricsDashboard onSelectEndpoint={() => setActiveTab('endpoints')} />
+        <div className="space-y-6">
+          <RealtimeLatencyReliabilityVisualizer onNavigateToSimulator={onNavigateToSimulator} />
+          <ApiMetricsDashboard onSelectEndpoint={() => setActiveTab('endpoints')} />
+        </div>
       )}
 
       {/* ANDROID SDK GUIDE TAB */}

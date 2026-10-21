@@ -646,6 +646,7 @@ curl -X POST "${baseUrl}/api/verification" \\
               <Sparkles className="w-3.5 h-3.5" />
               পাবলিক স্যান্ডবক্স টেস্ট ক্রেডেনশিয়াল অটো-ফিল করুন
             </button>
+          )}
         </div>
 
         {/* Binance Crypto Gateway Integration Hub Card */}

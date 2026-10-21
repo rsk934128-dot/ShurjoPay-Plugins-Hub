@@ -48,7 +48,9 @@ import {
   HardDrive,
   Menu,
   Key,
-  ZoomIn
+  ZoomIn,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export default function App() {
@@ -69,6 +71,8 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [installModalTab, setInstallModalTab] = useState<'pwa' | 'apk'>('pwa');
+  const [copiedCapCmd, setCopiedCapCmd] = useState(false);
 
   // Picture Preview Lightbox Modal State
   const [activeLightboxImage, setActiveLightboxImage] = useState<{
@@ -548,7 +552,9 @@ export default function App() {
           <SandboxSimulator onOpenAuthModal={() => setIsAuthModalOpen(true)} />
         )}
 
-        {activeView === 'docs' && <ApiDocumentation />}
+        {activeView === 'docs' && (
+          <ApiDocumentation onNavigateToSimulator={() => setActiveView('sandbox')} />
+        )}
 
         {activeView === 'kyc' && (
           <MerchantKycCompliance
@@ -649,70 +655,167 @@ export default function App() {
         </div>
       </footer>
 
-      {/* PWA Mobile Installation Modal */}
+      {/* PWA Mobile Installation & Android APK Build Modal */}
       {isInstallModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 relative">
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsInstallModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Logo and App Title */}
-            <div className="flex flex-col items-center text-center space-y-3 pt-2">
-              <ConceptBrandLogo size="xl" showBadge />
-
+            <div className="flex flex-col items-center text-center space-y-2 pt-1">
+              <ConceptBrandLogo size="lg" showBadge />
               <div>
-                <h3 className="text-lg font-bold text-white">SPay DevHub (Concept Demo)</h3>
-                <p className="text-xs text-amber-400 font-medium">মোবাইল অ্যাপ হিসেবে যুক্ত করুন</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  অ্যাপটি আপনার ফোনের হোম স্ক্রিনে ইনস্টল করে সরাসরি অ্যাপ আইকন থেকে চালু করতে পারেন।
-                </p>
+                <h3 className="text-base font-bold text-white">SPay DevHub — মোবাইল ও অ্যান্ড্রয়েড অ্যাপ</h3>
+                <p className="text-xs text-amber-400 font-medium">ইনস্টল ও গিটহাব থেকে APK তৈরির উপায়</p>
               </div>
             </div>
 
-            {/* Direct 1-Click Install Button if supported by browser */}
-            {deferredPrompt && (
+            {/* Mode Switcher Tabs */}
+            <div className="flex border-b border-slate-800 bg-slate-950/60 p-1 rounded-xl gap-1 text-xs">
               <button
-                onClick={handleTriggerInstall}
-                className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all"
+                type="button"
+                onClick={() => setInstallModalTab('pwa')}
+                className={`flex-1 py-2 px-3 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  installModalTab === 'pwa'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
               >
-                <Download className="w-4 h-4" />
-                <span>সরাসরি ডিভাইসে ইনস্টল করুন</span>
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>ব্রাউজারে ইনস্টল (PWA)</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setInstallModalTab('apk')}
+                className={`flex-1 py-2 px-3 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  installModalTab === 'apk'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>GitHub থেকে APK বিল্ড</span>
+              </button>
+            </div>
+
+            {/* TAB 1: PWA Quick Install */}
+            {installModalTab === 'pwa' && (
+              <div className="space-y-4">
+                {/* Direct 1-Click Install Button if supported by browser */}
+                {deferredPrompt && (
+                  <button
+                    onClick={handleTriggerInstall}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>সরাসরি ডিভাইসে ইনস্টল করুন</span>
+                  </button>
+                )}
+
+                {/* Instructions for Android & iOS */}
+                <div className="space-y-2.5 text-xs">
+                  <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                    <div className="flex items-center gap-2 font-semibold text-slate-200">
+                      <Smartphone className="w-4 h-4 text-emerald-400" />
+                      <span>Android (Chrome / Edge):</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px] leading-relaxed pl-6">
+                      ব্রাউজারের উপরের ডান কোণায় তিনটি ডট মেনু <strong className="text-slate-300">(⋮)</strong> চাপুন এবং <strong className="text-amber-300">"Install app"</strong> বা <strong className="text-amber-300">"Add to Home screen"</strong> নির্বাচন করুন।
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                    <div className="flex items-center gap-2 font-semibold text-slate-200">
+                      <Share2 className="w-4 h-4 text-amber-400" />
+                      <span>iPhone / iPad (Safari):</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px] leading-relaxed pl-6">
+                      সাফারি ব্রাউজারের নিচে শেয়ার বাটনে <strong className="text-slate-300">(Share icon)</strong> চাপুন এবং নিচে স্ক্রোল করে <strong className="text-amber-300">"Add to Home Screen"</strong> নির্বাচন করুন।
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
-            {/* Instructions for Android & iOS */}
-            <div className="space-y-3 pt-1 text-xs">
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5">
-                <div className="flex items-center gap-2 font-semibold text-slate-200">
-                  <Smartphone className="w-4 h-4 text-emerald-400" />
-                  <span>Android (Chrome / Edge):</span>
+            {/* TAB 2: Android APK & GitHub Actions */}
+            {installModalTab === 'apk' && (
+              <div className="space-y-3.5 text-xs">
+                {/* Method 1: GitHub Actions Cloud APK */}
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-amber-300">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span>পদ্ধতি ১: GitHub Actions অটোমেটিক APK</span>
+                    </div>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono">
+                      No PC Setup Required
+                    </span>
+                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    আপনার রিপোজিটরিতে <strong><code className="text-amber-300 font-mono">.github/workflows/android-apk.yml</code></strong> ফাইল তৈরি করা হয়েছে।
+                    গিটহাবে কোড পুশ করে <strong>Actions</strong> ট্যাবে গেলেই রেডিমেড <strong>.apk</strong> ডাউনলোড করতে পারবেন!
+                  </p>
                 </div>
-                <p className="text-slate-400 text-[11px] leading-relaxed pl-6">
-                  ব্রাউজারের উপরের ডান কোণায় তিনটি ডট মেনু <strong className="text-slate-300">(⋮)</strong> চাপুন এবং <strong className="text-amber-300">"Install app"</strong> বা <strong className="text-amber-300">"Add to Home screen"</strong> নির্বাচন করুন।
-                </p>
-              </div>
 
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5">
-                <div className="flex items-center gap-2 font-semibold text-slate-200">
-                  <Share2 className="w-4 h-4 text-amber-400" />
-                  <span>iPhone / iPad (Safari):</span>
+                {/* Method 2: Local Capacitor Commands */}
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-200 flex items-center gap-1.5">
+                      <Terminal className="w-3.5 h-3.5 text-sky-400" />
+                      পদ্ধতি ২: পিসিতে Android Studio ও Capacitor
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText('npm install @capacitor/core @capacitor/cli @capacitor/android && npm run build && npx cap add android && npx cap sync android && npx cap open android');
+                        setCopiedCapCmd(true);
+                        setTimeout(() => setCopiedCapCmd(false), 2000);
+                      }}
+                      className="text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer text-[11px]"
+                    >
+                      {copiedCapCmd ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedCapCmd ? 'কপি হয়েছে!' : 'কমান্ড কপি'}</span>
+                    </button>
+                  </div>
+                  <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto">
+                    npm run build &amp;&amp; npx cap add android &amp;&amp; npx cap open android
+                  </div>
+                  <p className="text-slate-400 text-[10px]">
+                    Android Studio ওপেন হলে <strong>Build &gt; Build APK(s)</strong> চাপলেই ফোন টেস্টের জন্য APK তৈরি হবে।
+                  </p>
                 </div>
-                <p className="text-slate-400 text-[11px] leading-relaxed pl-6">
-                  সাফারি ব্রাউজারের নিচে শেয়ার বাটনে <strong className="text-slate-300">(Share icon)</strong> চাপুন এবং নিচে স্ক্রোল করে <strong className="text-amber-300">"Add to Home Screen"</strong> নির্বাচন করুন।
-                </p>
-              </div>
-            </div>
 
-            <div className="flex justify-end pt-1">
+                {/* Method 3: PWABuilder Store Release */}
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-slate-200 block text-[11px]">পদ্ধতি ৩: PWABuilder (Google Play Store AAB)</span>
+                    <span className="text-slate-400 text-[10px]">Play Store-এ আপলোড করার জন্য সরাসরি .aab প্যাকেজ বানান</span>
+                  </div>
+                  <a
+                    href="https://www.pwabuilder.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors shrink-0"
+                  >
+                    <span>PWABuilder</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-slate-800">
               <button
                 onClick={() => setIsInstallModalOpen(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors w-full"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors w-full cursor-pointer"
               >
-                বুঝেছি, বন্ধ করুন
+                বন্ধ করুন
               </button>
             </div>
           </div>
